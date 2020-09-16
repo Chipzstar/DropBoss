@@ -1,0 +1,12 @@
+{
+  "name": "DropBoss",
+  "displayName": "DropBoss",
+  "expo": {
+    "name": "DropBoss",
+    "slug": "DropBoss",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
