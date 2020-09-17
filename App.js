@@ -1,59 +1,71 @@
-import React, { useEffect } from "react";
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import Constants from 'expo-constants'
-import * as Permissions from 'expo-permissions';
-import * as Notifications from 'expo-notifications';
+import React from "react";
+import "react-native-console-time-polyfill";
+import { StyleSheet } from "react-native";
+import * as Font from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import { AppLoading } from "expo";
+import AppNavigator from "./app/navigation/AppNavigator";
+import { NavigationContainer } from "@react-navigation/native";
 
-async function registerPushNotificationsAsync() {
-	let token;
-	if (Constants.isDevice) {
-		const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
-		let finalStatus = existingStatus;
-		if (existingStatus !== 'granted') {
-			const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
-			finalStatus = status;
-		}
-		if (finalStatus !== 'granted') {
-			alert('Failed to get push token for push notification!');
-			return;
-		}
-		token = (await Notifications.getDevicePushTokenAsync()).data;
-		console.log(token);
-	} else {
-		alert('Must use physical device for Push Notifications');
+let customFonts = {
+	"Lato-Regular": require("./app/assets/fonts/lato/Lato-Regular.ttf"),
+	"Lato-Bold": require("./app/assets/fonts/lato/Lato-Bold.ttf"),
+	"Lato-Italic": require("./app/assets/fonts/lato/Lato-Italic.ttf"),
+	"Lato-Light": require("./app/assets/fonts/lato/Lato-Light.ttf"),
+	"Lato-Black": require("./app/assets/fonts/lato/Lato-Black.ttf"),
+	"Lato-Thin": require("./app/assets/fonts/lato/Lato-Thin.ttf"),
+	DashIcons: require("./app/assets/icons/general/fonts/icomoon.ttf"),
+	Emojis: require('./app/assets/icons/emojis/fonts/icomoon.ttf')
+};
+
+export default class App extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			loading: true,
+		};
 	}
 
-	if (Platform.OS === 'android') {
-		await Notifications.setNotificationChannelAsync('default', {
-			name: 'default',
-			importance: Notifications.AndroidImportance.MAX,
-			vibrationPattern: [0, 250, 250, 250],
-			lightColor: '#FF231F7C',
+	async componentDidMount() {
+		try {
+			await SplashScreen.preventAutoHideAsync();
+		} catch (e) {
+			console.warn(e);
+		}
+		this.prepareResources().then(() =>
+			console.log("All resources have been loaded!")
+		);
+	}
+
+	prepareResources = async () => {
+		//await performAPICalls()
+		await downloadAssets();
+		this.setState({ loading: false }, async () => {
+			await SplashScreen.hideAsync();
 		});
+	};
+
+	render() {
+		const { loading } = this.state;
+		if (loading) {
+			return <AppLoading />;
+		}
+		return (
+			<NavigationContainer>
+				<AppNavigator/>
+			</NavigationContainer>
+		);
 	}
 }
 
-export default function App() {
-	useEffect(() => {
-		registerPushNotificationsAsync().then(token => console.log(token))
-	})
-	return (
-		<View style={styles.container}>
-			<Text style={styles.text}>Open up App.js to start working on your app!</Text>
-			<StatusBar style='auto' />
-		</View>
-	);
+//async function performAPICalls() {}
+
+async function downloadAssets() {
+	await Font.loadAsync(customFonts);
 }
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#fff",
-		alignItems: "center",
-		justifyContent: "center",
 	},
-	text: {
-		fontSize: 24
-	}
 });
