@@ -42,6 +42,7 @@ class UserPermissions {
 				return;
 			}
 			token = (await Notifications.getDevicePushTokenAsync()).data;
+			console.log(token);
 			await updateUserFcmToken(user, token);
 			return token;
 		} else {

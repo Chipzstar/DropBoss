@@ -4,8 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { Block, Text } from "galio-framework";
 import * as Location from "expo-location";
-import firebase from "firebase/app";
-import "firebase/database";
+import firebase from "@react-native-firebase/app";
+import "@react-native-firebase/database";
 //assets
 import oscar from "../../assets/images/oscar.jpg";
 //components
@@ -28,7 +28,9 @@ const Dashboard = props => {
 	const [incomingReqs, updateIncoming] = useState([]);
 	const [declinedReqs, updateDeclined] = useState([]);
 
+	//CONSTANTS
 	const { user } = useContext(AuthContext);
+	const topic = "ride_requests";
 	const requestRef = firebase.database().ref(`requests`);
 
 	const declineRequest = useCallback(
@@ -77,6 +79,12 @@ const Dashboard = props => {
 	useEffect(() => {
 		if (isOnline) {
 			connectDB();
+			//subscribe to `ride_requests` topic messages
+			firebase
+				.messaging()
+				.subscribeToTopic(topic)
+				.then(() => console.log("subscribed to ride requests"))
+				.catch(err => console.error(err))
 			//init firebase database event listener
 			setTimeout(
 				() =>
@@ -107,14 +115,19 @@ const Dashboard = props => {
 									setRiderDetails(snapshot.val());
 								}
 							},
-							err => Alert.alert("Error:", err)
+							err => Alert.alert("Error:", err.message)
 						),
 				1500
 			);
 		} else {
 			//end firebase db listener
 			requestRef.off("child_added");
-			disconnectDB();
+			firebase.messaging().unsubscribeFromTopic(topic)
+				.then(() => {
+					console.log("unsubscribed from ride requests")
+					disconnectDB()
+				})
+				.catch(err => console.error(err))
 		}
 		return () => clearTimeout();
 	}, [isOnline, declineRequest, cancelRide]);
@@ -134,7 +147,7 @@ const Dashboard = props => {
 				longitude: coords.longitude,
 			});
 			let token = await UserPermissions.registerPushNotificationsAsync(user);
-			console.log("fcmToken:",token);
+			console.log("fcmToken:", token);
 		})();
 	}, []);
 

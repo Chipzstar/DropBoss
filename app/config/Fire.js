@@ -1,8 +1,7 @@
-import firebase from "firebase/app";
-import "firebase/storage";
-import "firebase/database";
+import firebase from "@react-native-firebase/app";
+import '@react-native-firebase/database'
 
-export const firebaseConfig = {
+/*export const firebaseConfig = {
 	apiKey: "AIzaSyB5wg9Gu6z7LDwvDB9BfV03VycPk-aRFZE",
 	authDomain: "ridesdash-13b8a.firebaseapp.com",
 	databaseURL: "https://ridesdash-13b8a.firebaseio.com",
@@ -11,7 +10,7 @@ export const firebaseConfig = {
 	messagingSenderId: "222913989504",
 	appId: "1:222913989504:web:b832526fde3b167c498f65",
 	measurementId: "G-XGS48CHHK2",
-};
+};*/
 
 export const disconnectDB = () => {
 	firebase.database().goOffline();
@@ -53,4 +52,4 @@ export const markRideAccepted = async (path, userId) => {
 	});
 };
 
-export default firebase.initializeApp(firebaseConfig);
+/*export default firebase.initializeApp(firebaseConfig);*/

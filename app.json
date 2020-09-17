@@ -7,6 +7,15 @@
     "version": "1.0.0",
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "android": {
+      "package": "com.dropboss",
+      "googleServicesFile": "./android/app/google-services.json"
+    },
+    "splash": {
+      "image": "./app/assets/splash/splash.png",
+      "resizeMode": "cover"
+    },
+    "icon": "./app/assets/splash/logo.png"
   }
 }

@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { AppLoading } from "expo";
+import { Alert } from "react-native";
 import { createStackNavigator } from "@react-navigation/stack";
 import Dashboard from "../screens/Dashboard/Dashboard";
 import Profile from "../screens/Profile/Profile";
 import Settings from "../screens/Settings/Settings";
 import { AuthProvider } from "../context/AuthContext";
-//firebase
-import * as firebaseApp from "firebase/app";
-import "firebase/auth";
 //react-native-firebase
-import { AppLoading } from "expo";
+import firebase from "@react-native-firebase/app";
+import "@react-native-firebase/auth";
+import "@react-native-firebase/messaging";
 
 const MainStack = createStackNavigator();
 
@@ -21,17 +22,36 @@ const MainStackScreen = () => (
 );
 
 const AppNavigator = props => {
+	const [initializing, setInitializing] = useState(true);
 	const [userToken, setUserToken] = useState(null);
+
+	const authContext = useMemo(
+		() => ({
+			user: userToken ? firebase.auth().currentUser : null,
+		}),
+		[userToken]
+	);
+
 	useEffect(() => {
-		return firebaseApp.auth().onAuthStateChanged(onAuthStateChanged);
+		/*firebase.messaging().onNotificationOpenedApp(remoteMessage => {
+			console.log(
+				'Notification caused app to open from background state:',
+				remoteMessage.notification,
+			);
+		});*/
+		const unsubscribeAuth = firebase
+			.auth()
+			.onAuthStateChanged(onAuthStateChanged);
+		return unsubscribeAuth();
 	}, []);
 
 	function onAuthStateChanged(user) {
 		if (user) {
 			console.log("signed in");
 			setUserToken(user);
+			setInitializing(false);
 		} else {
-			firebaseApp
+			firebase
 				.auth()
 				.signInWithEmailAndPassword(
 					"chipzstar.dev@googlemail.com",
@@ -42,11 +62,11 @@ const AppNavigator = props => {
 		}
 	}
 
-	return (
-		<AuthProvider value={{ user: userToken }}>
-			<MainStackScreen/>
+	return !initializing && userToken ? (
+		<AuthProvider value={authContext}>
+			<MainStackScreen />
 		</AuthProvider>
-	);
+	) : <AppLoading/>;
 };
 
 export default AppNavigator;
