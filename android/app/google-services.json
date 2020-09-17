@@ -1,0 +1,91 @@
+{
+  "project_info": {
+    "project_number": "222913989504",
+    "firebase_url": "https://ridesdash-13b8a.firebaseio.com",
+    "project_id": "ridesdash-13b8a",
+    "storage_bucket": "ridesdash-13b8a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222913989504:android:567c2df874fde794498f65",
+        "android_client_info": {
+          "package_name": "com.dashrides"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222913989504-kjnqpva80nhpoq6gc2suc44mpcue6qn0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dashrides",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "222913989504-npkcfsm5fktmdspd12t99g3ui094mvm3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBITMV86xYnajYQ_shGxCa3f8bt8iOTDRw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222913989504-npkcfsm5fktmdspd12t99g3ui094mvm3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "222913989504-9jg8gcpfpnh63gau1fft8kac3r2sfh8f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.RideDash.DashBoss"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222913989504:android:fa2b6190b62ef520498f65",
+        "android_client_info": {
+          "package_name": "com.dropboss"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "222913989504-npkcfsm5fktmdspd12t99g3ui094mvm3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBITMV86xYnajYQ_shGxCa3f8bt8iOTDRw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "222913989504-npkcfsm5fktmdspd12t99g3ui094mvm3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "222913989504-9jg8gcpfpnh63gau1fft8kac3r2sfh8f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.RideDash.DashBoss"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
