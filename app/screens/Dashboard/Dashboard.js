@@ -84,7 +84,7 @@ const Dashboard = props => {
 				.messaging()
 				.subscribeToTopic(topic)
 				.then(() => console.log("subscribed to ride requests"))
-				.catch(err => console.error(err))
+				.catch(err => console.error(err));
 			//init firebase database event listener
 			setTimeout(
 				() =>
@@ -122,12 +122,14 @@ const Dashboard = props => {
 		} else {
 			//end firebase db listener
 			requestRef.off("child_added");
-			firebase.messaging().unsubscribeFromTopic(topic)
+			firebase
+				.messaging()
+				.unsubscribeFromTopic(topic)
 				.then(() => {
-					console.log("unsubscribed from ride requests")
-					disconnectDB()
+					console.log("unsubscribed from ride requests");
+					disconnectDB();
 				})
-				.catch(err => console.error(err))
+				.catch(err => console.error(err));
 		}
 		return () => clearTimeout();
 	}, [isOnline, declineRequest, cancelRide]);
@@ -146,7 +148,9 @@ const Dashboard = props => {
 				latitude: coords.latitude,
 				longitude: coords.longitude,
 			});
-			let token = await UserPermissions.registerPushNotificationsAsync(user);
+			let token = await UserPermissions.registerPushNotificationsAsync(
+				user
+			);
 			console.log("fcmToken:", token);
 		})();
 	}, []);
@@ -167,6 +171,7 @@ const Dashboard = props => {
 					latitudeDelta: 0.005,
 					longitudeDelta: 0.005,
 				}}
+				followUserLocation={true}
 				showsCompass={true}
 				showsUserLocation={true}
 				style={styles.container}

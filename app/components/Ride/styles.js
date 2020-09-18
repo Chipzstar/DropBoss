@@ -1,9 +1,11 @@
+import React from "react";
 import {StyleSheet, Dimensions} from "react-native";
 import { COLOURS } from "../../constants/Theme";
-import React from "react";
 
 export const {width: WIDTH} = Dimensions.get("window"); //Max Width of phone screen
 export const {height: HEIGHT} = Dimensions.get("window"); //Max Height of phone screen
+
+const BTN_SIZE = 134;
 
 export default (styles = StyleSheet.create({
 	container: {
@@ -23,6 +25,7 @@ export default (styles = StyleSheet.create({
 		elevation: 5,
 		width: 133,
 		height: 52,
+		top: BTN_SIZE*0.5
 	},
 	rideContainer: {
 		backgroundColor: COLOURS.WHITE,
