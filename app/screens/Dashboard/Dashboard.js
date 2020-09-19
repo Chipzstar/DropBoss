@@ -1,11 +1,12 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Block, Text } from "galio-framework";
 import * as Location from "expo-location";
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
+import { IMAGES } from "../../constants/Theme";
 //assets
 import oscar from "../../assets/images/oscar.jpg";
 //components
@@ -20,7 +21,8 @@ import UserPermissions from "../../permissions/UserPermissions";
 import { connectDB, disconnectDB, markRideAccepted } from "../../config/Fire";
 
 const Dashboard = props => {
-	const [coords, setCoords] = useState({ latitude: 0, longitude: 0 });
+	const [coords, setInitialCoords] = useState({ latitude: 0, longitude: 0 });
+	const [markers, updateMarkers] = useState([]);
 	const [currentReqId, setCurrentReqId] = useState("");
 	const [isOnline, setOnlineStatus] = useState(false);
 	const [newRide, setNewRide] = useState(false); //changes when driver accepts a new ride request
@@ -28,40 +30,33 @@ const Dashboard = props => {
 	const [incomingReqs, updateIncoming] = useState([]);
 	const [declinedReqs, updateDeclined] = useState([]);
 
-	//CONSTANTS
+	//CONSTANTS & REFS
 	const { user } = useContext(AuthContext);
 	const topic = "ride_requests";
 	const requestRef = firebase.database().ref(`requests`);
+	const mapViewRef = useRef(null);
 
-	const declineRequest = useCallback(
-		reqId => {
-			console.log("DECLINED");
+	const reset = useCallback(
+		(reqId, type) => {
 			setRiderDetails(false);
 			updateIncoming(prevState => {
 				prevState.shift();
 				return prevState;
 			});
+			updateMarkers(prevState => {
+				prevState.pop()		// removes element at front of STACK
+				return prevState;
+			})
 			updateDeclined(prevState => {
 				prevState.push(reqId);
 				return prevState;
 			});
-		},
-		[incomingReqs, declinedReqs]
-	);
-
-	const cancelRide = useCallback(
-		reqId => {
-			console.log("CANCELLED");
-			setRiderDetails(false);
-			updateIncoming(prevState => {
-				prevState.shift();
-				return prevState;
-			});
-			updateDeclined(prevState => {
-				prevState.push(reqId);
-				return prevState;
-			});
-			setNewRide(false);
+			if(type === "CANCEL"){
+				console.log("CANCELLED");
+				setNewRide(false);
+			} else {
+				console.log("DECLINED")
+			}
 		},
 		[incomingReqs, declinedReqs]
 	);
@@ -75,6 +70,38 @@ const Dashboard = props => {
 			})
 			.catch(err => Alert.alert("ERROR", err.message));
 	}
+
+	/**
+	 * CONSTRUCTOR
+	 */
+	useEffect(() => {
+		setRiderDetails(false);
+		(async () => {
+			await UserPermissions.getLocationPermission();
+			let {
+				coords: { latitude, longitude },
+			} = await Location.getCurrentPositionAsync({
+				accuracy: Location.Accuracy.BestForNavigation,
+				enableHighAccuracy: true,
+				timeout: 20000,
+				maximumAge: 2000,
+			});
+			setInitialCoords({
+				latitude,
+				longitude,
+			});
+			updateMarkers(prevState => {
+				prevState.push({ id: "home", latitude, longitude });
+				return prevState;
+			});
+			await UserPermissions.registerPushNotificationsAsync(user);
+		})();
+	}, []);
+
+	// updates on new markers
+	useEffect(() => {
+		console.table(markers)
+	}, [markers]);
 
 	useEffect(() => {
 		if (isOnline) {
@@ -111,6 +138,16 @@ const Dashboard = props => {
 									!declinedReqs.includes(snapshot.key) &&
 									snapshot.val().isAccepted !== true
 								) {
+									updateMarkers(prevState => {
+										let {
+											lat: latitude,
+											lng: longitude,
+										} = snapshot.val().source[
+											"geometry"
+										].location;
+										prevState.push({ id: "pickup", latitude, longitude });
+										return prevState;
+									});
 									setCurrentReqId(snapshot.key);
 									setRiderDetails(snapshot.val());
 								}
@@ -132,33 +169,13 @@ const Dashboard = props => {
 				.catch(err => console.error(err));
 		}
 		return () => clearTimeout();
-	}, [isOnline, declineRequest, cancelRide]);
-
-	useEffect(() => {
-		setRiderDetails(false);
-		(async () => {
-			await UserPermissions.getLocationPermission();
-			let { coords } = await Location.getCurrentPositionAsync({
-				accuracy: Location.Accuracy.BestForNavigation,
-				enableHighAccuracy: true,
-				timeout: 20000,
-				maximumAge: 2000,
-			});
-			setCoords({
-				latitude: coords.latitude,
-				longitude: coords.longitude,
-			});
-			let token = await UserPermissions.registerPushNotificationsAsync(
-				user
-			);
-			console.log("fcmToken:", token);
-		})();
-	}, []);
+	}, [isOnline, reset]);
 
 	return (
 		<Block style={{ ...StyleSheet.absoluteFillObject }}>
 			<StatusBar hidden />
 			<MapView
+				ref={mapViewRef}
 				provider={PROVIDER_GOOGLE}
 				initialRegion={{
 					latitude: 51.54399,
@@ -171,24 +188,40 @@ const Dashboard = props => {
 					latitudeDelta: 0.005,
 					longitudeDelta: 0.005,
 				}}
-				followUserLocation={true}
+				followUserLocation={!riderDetails}
 				showsCompass={true}
-				showsUserLocation={true}
-				style={styles.container}
-			/>
+				showsUserLocation={!riderDetails}
+				style={[styles.mapContainer, {flex: !riderDetails ? 1 : 0.7}]}
+			>
+				{riderDetails &&
+					markers.map(({ id, latitude, longitude }, index) => (
+						<Marker key={index} coordinate={{ latitude, longitude }} identifier={id}>
+							{index === 0 && (
+								<Image
+									source={IMAGES.carTop}
+									style={{ width: 25, height: 50 }}
+								/>
+							)}
+						</Marker>
+					))}
+			</MapView>
 			{isOnline && riderDetails ? (
 				newRide ? (
 					<PickUp
 						reqId={currentReqId}
 						details={riderDetails}
-						onCancel={cancelRide}
+						onCancel={reset}
+						markers={markers}
+						ref={mapViewRef}
 					/>
 				) : (
 					<NewRequest
 						reqId={currentReqId}
 						details={riderDetails}
-						onDecline={declineRequest}
+						onDecline={reset}
 						onAccept={acceptRequest}
+						markers={markers}
+						ref={mapViewRef}
 					/>
 				)
 			) : (

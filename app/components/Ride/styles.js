@@ -32,8 +32,7 @@ export default (styles = StyleSheet.create({
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "flex-end",
-		width: WIDTH,
-		height: HEIGHT * 0.3,
+		flex: 0.3,
 		paddingHorizontal: 20,
 	},
 	addressContainer: {

@@ -6,17 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { AppLoading } from "expo";
 import AppNavigator from "./app/navigation/AppNavigator";
 import { NavigationContainer } from "@react-navigation/native";
-
-let customFonts = {
-	"Lato-Regular": require("./app/assets/fonts/lato/Lato-Regular.ttf"),
-	"Lato-Bold": require("./app/assets/fonts/lato/Lato-Bold.ttf"),
-	"Lato-Italic": require("./app/assets/fonts/lato/Lato-Italic.ttf"),
-	"Lato-Light": require("./app/assets/fonts/lato/Lato-Light.ttf"),
-	"Lato-Black": require("./app/assets/fonts/lato/Lato-Black.ttf"),
-	"Lato-Thin": require("./app/assets/fonts/lato/Lato-Thin.ttf"),
-	DashIcons: require("./app/assets/icons/general/fonts/icomoon.ttf"),
-	Emojis: require('./app/assets/icons/emojis/fonts/icomoon.ttf')
-};
+import { FONTS } from "./app/constants/Theme";
 
 export default class App extends React.Component {
 	constructor(props) {
@@ -61,7 +51,7 @@ export default class App extends React.Component {
 //async function performAPICalls() {}
 
 async function downloadAssets() {
-	await Font.loadAsync(customFonts);
+	await Font.loadAsync(FONTS);
 }
 
 const styles = StyleSheet.create({

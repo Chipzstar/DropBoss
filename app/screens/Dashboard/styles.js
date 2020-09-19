@@ -7,8 +7,7 @@ export const HEIGHT = Dimensions.get("window").height;
 const BTN_SIZE = 134;
 
 export default (styles = StyleSheet.create({
-	container: {
-		flex: 1,
+	mapContainer: {
 		alignItems: "center",
 		justifyContent: "center",
 	},

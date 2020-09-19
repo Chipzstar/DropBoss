@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Image, View } from "react-native";
 import PropTypes from "prop-types";
 import { Block, Button, Input, Text } from "galio-framework";
@@ -6,14 +6,27 @@ import { COLOURS } from "../../constants/Theme";
 import DashIcons from "../DashIcons";
 import styles, { HEIGHT, WIDTH } from "./styles";
 import call from "../../assets/images/btn_call.png";
+import EdgePadding from "../../helpers/EdgePadding";
 
-const PickUp = ({ reqId, details, onCancel }) => {
+const PickUp = React.forwardRef(({ reqId, details, onCancel, markers }, ref) => {
+	useEffect(() => {
+		let ids = markers.map(marker => marker.id);
+		setTimeout(
+			() =>
+				ref.current.fitToSuppliedMarkers(ids, {
+					edgePadding: EdgePadding,
+					animated: false
+				}),
+			1000
+		);
+	}, []);
+
 	return (
 		<View style={styles.container}>
 			<Button
 				color={COLOURS.WHITE}
 				style={styles.declineBtn}
-				onPress={() => onCancel(reqId)}
+				onPress={() => onCancel(reqId, "CANCEL")}
 			>
 				<DashIcons
 					style={{ marginRight: 10 }}
@@ -59,12 +72,13 @@ const PickUp = ({ reqId, details, onCancel }) => {
 			</Block>
 		</View>
 	);
-};
+});
 
 PickUp.propTypes = {
 	reqId: PropTypes.string.isRequired,
 	details: PropTypes.object.isRequired,
 	onCancel: PropTypes.func.isRequired,
+	markers: PropTypes.array.isRequired
 };
 
 export default PickUp;
