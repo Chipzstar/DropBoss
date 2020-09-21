@@ -8,17 +8,16 @@ import styles, { HEIGHT, WIDTH } from "./styles";
 import call from "../../assets/images/btn_call.png";
 import EdgePadding from "../../helpers/EdgePadding";
 
-const PickUp = React.forwardRef(({ reqId, details, onCancel, markers }, ref) => {
+const PickUp = React.forwardRef(({ reqId, details, onCancel, markers, metrics }, ref) => {
 	useEffect(() => {
 		let ids = markers.map(marker => marker.id);
 		setTimeout(
-			() =>
+			() => {
 				ref.current.fitToSuppliedMarkers(ids, {
 					edgePadding: EdgePadding,
 					animated: false
-				}),
-			1000
-		);
+				})
+			}, 100);
 	}, []);
 
 	return (
@@ -45,12 +44,12 @@ const PickUp = React.forwardRef(({ reqId, details, onCancel, markers }, ref) => 
 						size={34}
 						style={{ fontFamily: "Lato-Bold", paddingBottom: 10 }}
 					>
-						3 min . 1.4 mi
+						{`${Math.round(metrics.duration)} min . ${Math.round(metrics.distance)} km`}
 					</Text>
 					<Block
 						style={{
 							display: "flex",
-							justifyContent: "flex-end",
+							justifyContent: "flex-end"
 						}}
 					>
 						<Text style={styles.subText}>
@@ -78,7 +77,8 @@ PickUp.propTypes = {
 	reqId: PropTypes.string.isRequired,
 	details: PropTypes.object.isRequired,
 	onCancel: PropTypes.func.isRequired,
-	markers: PropTypes.array.isRequired
+	markers: PropTypes.array.isRequired,
+	metrics: PropTypes.object.isRequired
 };
 
 export default PickUp;

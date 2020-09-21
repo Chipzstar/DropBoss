@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Block, Button, Text } from "galio-framework";
 import PropTypes from "prop-types";
@@ -8,31 +8,25 @@ import styles from "./styles";
 import EdgePadding from "../../helpers/EdgePadding";
 
 const NewRequest = React.forwardRef(
-	({ reqId, details, onDecline, onAccept, markers }, ref) => {
+	({ reqId, details, onDecline, onAccept, markers, metrics }, ref) => {
+		const [camera, setCamera] = useState({})
+		/**
+		 * CONSTRUCTOR
+		 */
 		useEffect(() => {
 			let ids = markers.map(marker => marker.id);
 			setTimeout(
-				() =>
+				() => {
 					ref.current.fitToSuppliedMarkers(ids, {
 						edgePadding: EdgePadding
-					}),
-				750
-			);
+					})
+				}, 1000);
 		}, []);
 
 		return (
 			<View style={styles.container}>
-				<Button
-					color={COLOURS.WHITE}
-					style={styles.declineBtn}
-					onPress={() => onDecline(reqId, "DECLINE")}
-				>
-					<DashIcons
-						style={{ marginRight: 10 }}
-						name={"close"}
-						size={15}
-						color={COLOURS.TEXT}
-					/>
+				<Button color={COLOURS.WHITE} style={styles.declineBtn} onPress={() => onDecline(reqId, "DECLINE")}>
+					<DashIcons style={{ marginRight: 10 }} name={"close"} size={15} color={COLOURS.TEXT} />
 					<Text size={18} color={COLOURS.TEXT}>
 						decline
 					</Text>
@@ -47,27 +41,18 @@ const NewRequest = React.forwardRef(
 								paddingBottom: 10,
 							}}
 						>
-							3 min . 1.4 mi
+							{`${Math.round(metrics.duration)} min . ${Math.round(metrics.distance)} km`}
 						</Text>
-						<Text
-							color={COLOURS.HEADING}
-							size={18}
-							style={{ fontFamily: "Lato-Regular" }}
-						>
+						<Text color={COLOURS.HEADING} size={18} style={{ fontFamily: "Lato-Regular" }}>
 							{details.source["name"]}
 						</Text>
 					</Block>
 					<TouchableOpacity
-						disabled
 						activeOpacity={0.7}
 						style={styles.acceptBtn}
-						onPress={() => onAccept(reqId)}
+						onPress={() => onAccept(reqId, camera)}
 					>
-						<Text
-							size={24}
-							color={COLOURS.WHITE}
-							style={{ fontFamily: "Roboto" }}
-						>
+						<Text size={24} color={COLOURS.WHITE} style={{ fontFamily: "Roboto" }}>
 							Accept
 						</Text>
 					</TouchableOpacity>
@@ -83,6 +68,7 @@ NewRequest.propTypes = {
 	onDecline: PropTypes.func.isRequired,
 	onAccept: PropTypes.func.isRequired,
 	markers: PropTypes.array.isRequired,
+	metrics: PropTypes.object.isRequired
 };
 
 export default NewRequest;

@@ -1,14 +1,38 @@
 import firebase from "@react-native-firebase/app";
-import '@react-native-firebase/database'
+import "@react-native-firebase/database";
+import "@react-native-firebase/messaging";
 
-export const disconnectDB = () => {
-	firebase.database().goOffline();
-	console.log("disconnected from DB");
+const topic = "ride_requests";
+
+export const disconnect = () => {
+	firebase
+		.messaging()
+		.unsubscribeFromTopic(topic)
+		.then(() => {
+			console.log("unsubscribed from ride requests");
+			firebase
+				.database()
+				.goOffline()
+				.then(() => console.log("disconnected from DB"));
+		})
+		.catch(err => console.error(err));
 };
 
-export const connectDB = () => {
-	firebase.database().goOnline();
-	console.log("connected to DB");
+export const connect = () => {
+	//subscribe to `ride_requests` topic messages
+	firebase
+		.database()
+		.goOnline()
+		.then(() => {
+			console.log("connected to DB");
+			firebase
+				.messaging()
+				.subscribeToTopic(topic)
+				.then(() => {
+					console.log("subscribed to ride requests");
+				});
+		})
+		.catch(err => console.error(err));
 };
 
 export const updateUserFcmToken = (driver, fcmToken) => {
