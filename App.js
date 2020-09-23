@@ -1,13 +1,12 @@
 import React from "react";
 import "react-native-console-time-polyfill";
-import { StyleSheet } from "react-native";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { AppLoading } from "expo";
 import AppNavigator from "./app/navigation/AppNavigator";
 import { NavigationContainer } from "@react-navigation/native";
 import { FONTS } from "./app/constants/Theme";
-
+import AsyncStorage from '@react-native-community/async-storage'
 export default class App extends React.Component {
 	constructor(props) {
 		super(props);
@@ -53,9 +52,3 @@ export default class App extends React.Component {
 async function downloadAssets() {
 	await Font.loadAsync(FONTS);
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
-});

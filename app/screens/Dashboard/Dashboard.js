@@ -6,8 +6,10 @@ import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { Block, Text } from "galio-framework";
 import * as Location from "expo-location";
+//firebase
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
+import "@react-native-firebase/messaging";
 //assets
 import oscar from "../../assets/images/oscar.jpg";
 //components
@@ -19,19 +21,20 @@ import { COLOURS, IMAGES } from "../../constants/Theme";
 import styles from "./styles";
 //functions
 import UserPermissions from "../../permissions/UserPermissions";
-import { connect, disconnect, markRideAccepted } from "../../config/Fire";
+import { connect, disconnect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
+import { getRideStatus, setPickUpMode } from "../../store/AsyncStorage";
 
 const Dashboard = props => {
+	const [isOnline, setOnlineStatus] = useState(false);
 	const [coords, setInitialCoords] = useState({ latitude: 0, longitude: 0 });
 	const [markers, updateMarkers] = useState([]);
 	const [currentReqId, setCurrentReqId] = useState("");
-	const [isOnline, setOnlineStatus] = useState(false);
+	const [incomingReqs, updateIncoming] = useState([]);
+	const [declinedReqs, updateDeclined] = useState([]);
 	const [newRequest, setNewRequest] = useState(false);
 	const [newRide, setNewRide] = useState(false); //changes when driver accepts a new ride request
 	const [riderDetails, setRiderDetails] = useState(false);
-	const [incomingReqs, updateIncoming] = useState([]);
-	const [declinedReqs, updateDeclined] = useState([]);
-	const [travelMetrics, setMetrics] = useState({});
+	const [travelMetrics, setMetrics] = useState({ distance: 0, duration: 0});
 
 	//CONSTANTS & REFS
 	const { user } = useContext(AuthContext);
@@ -60,8 +63,9 @@ const Dashboard = props => {
 			} else {
 				console.log("DECLINED");
 			}
+			return null;
 		},
-		[incomingReqs, declinedReqs]
+		[incomingReqs, declinedReqs, markers]
 	);
 
 	function acceptRequest(requestId) {
@@ -69,7 +73,7 @@ const Dashboard = props => {
 			.then(() => {
 				requestRef.off("child_added");
 				console.log("ACCEPTED");
-				setNewRide(true);
+				setPickUpMode().then(() => setNewRide(true))
 			})
 			.catch(err => Alert.alert("ERROR", err.message));
 	}
@@ -79,11 +83,6 @@ const Dashboard = props => {
 	 *  push notifications
 	 */
 	useEffect(() => {
-		setOnlineStatus(false)
-		setNewRequest(false);
-		setRiderDetails(false);
-		updateMarkers(prevState => []);
-		setMetrics({distance: 0, duration: 0});
 		(async () => {
 			await UserPermissions.getLocationPermission();
 			let {
@@ -99,73 +98,70 @@ const Dashboard = props => {
 				longitude,
 			});
 			updateMarkers(prevState => {
-				prevState.push({ id: "home", latitude, longitude });
+				prevState.splice(0, 1, { id: "home", latitude, longitude });
+				console.log("updated markers", prevState);
 				return prevState;
 			});
 			await UserPermissions.registerPushNotificationsAsync(user);
+			await updateUserCoordinates(user, { latitude, longitude })
 		})();
 	}, []);
-
-	// updates on new markers
-	useEffect(() => {
-		console.table(markers);
-	}, [markers]);
 
 	/**
 	 * Lifecycle method to handle online status changes
 	 */
 	useEffect(() => {
-		if (isOnline) {
-			connect();
-			//init firebase database event listener
-			setTimeout(
-				() =>
-					requestRef
-						.orderByKey()
-						.limitToLast(1)
-						.on(
-							"child_added",
-							snapshot => {
-								let lastReq = undefined;
-								updateIncoming(prevState => {
-									lastReq = prevState.length ? prevState[0] : null;
-									console.log("initial queue:", prevState);
-									prevState.push(snapshot.key);
-									console.log("updated queue:", prevState);
-									return prevState;
-								});
-								console.log("Key:", snapshot.key);
-								console.log("Last request:", lastReq);
-								if (
-									snapshot.key !== undefined &&
-									!declinedReqs.includes(snapshot.key) &&
-									snapshot.val().isAccepted !== true
-								) {
-									updateMarkers(prevState => {
-										let { lat: latitude, lng: longitude } = snapshot.val().source[
-											"geometry"
-										].location;
-										prevState.push({
-											id: "pickup",
-											latitude,
-											longitude,
-										});
+		(async () => {
+			if (isOnline) {
+				await connect();
+				//init firebase database event listener
+				setTimeout(
+					() =>
+						requestRef
+							.orderByKey()
+							.limitToLast(1)
+							.on(
+								"child_added",
+								snapshot => {
+									updateIncoming(prevState => {
+										console.log("initial queue:", prevState);
+										prevState.push(snapshot.key);
+										console.log("updated queue:", prevState);
 										return prevState;
 									});
-									setCurrentReqId(snapshot.key);
-									setRiderDetails(snapshot.val());
-								}
-							},
-							err => Alert.alert("Error:", err.message)
-						),
-				1500
-			);
-		} else {
-			//end firebase db listener
-			requestRef.off("child_added");
-			disconnect();
-		}
-		return () => clearTimeout();
+									console.log("Key:", snapshot.key);
+									if (
+										snapshot.key !== undefined &&
+										!declinedReqs.includes(snapshot.key) &&
+										snapshot.val().isAccepted !== true
+									) {
+										updateMarkers(prevState => {
+											let { lat: latitude, lng: longitude } = snapshot.val().source[
+												"geometry"
+												].location;
+											prevState.push({
+												id: "pickup",
+												latitude,
+												longitude,
+											});
+											console.log("updated markers:", prevState);
+											return prevState;
+										});
+										setCurrentReqId(snapshot.key);
+										setRiderDetails(snapshot.val());
+									}
+								},
+								err => Alert.alert("Error:", err.message)
+							),
+					1500
+				);
+			} else {
+				//end firebase db listener
+				requestRef.off("child_added");
+				await firebase.messaging().unsubscribeFromTopic("ride_requests");
+				console.log("unsubscribed from ride requests");
+			}
+		})();
 	}, [isOnline, reset]);
 
 	return (
@@ -185,9 +181,9 @@ const Dashboard = props => {
 					latitudeDelta: 0.005,
 					longitudeDelta: 0.005,
 				}}
+				showsUserLocation={!markers.length}
 				followUserLocation={!markers.length}
 				showsCompass={true}
-				showsUserLocation={!markers.length}
 				style={[styles.mapContainer, { flex: !riderDetails ? 1 : 0.7 }]}
 			>
 				{markers.map(({ id, latitude, longitude }, index) => (

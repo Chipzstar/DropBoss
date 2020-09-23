@@ -42,8 +42,8 @@ class UserPermissions {
 				return;
 			}
 			token = (await Notifications.getDevicePushTokenAsync()).data;
-			console.log(token);
 			await updateUserFcmToken(user, token);
+			console.log("Token:", token)
 			return token;
 		} else {
 			alert("Must use physical device for Push Notifications");

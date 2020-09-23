@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Block, Button, Text } from "galio-framework";
 import PropTypes from "prop-types";
@@ -9,7 +9,6 @@ import EdgePadding from "../../helpers/EdgePadding";
 
 const NewRequest = React.forwardRef(
 	({ reqId, details, onDecline, onAccept, markers, metrics }, ref) => {
-		const [camera, setCamera] = useState({})
 		/**
 		 * CONSTRUCTOR
 		 */
@@ -21,6 +20,7 @@ const NewRequest = React.forwardRef(
 						edgePadding: EdgePadding
 					})
 				}, 1000);
+			return clearTimeout()
 		}, []);
 
 		return (
@@ -50,7 +50,7 @@ const NewRequest = React.forwardRef(
 					<TouchableOpacity
 						activeOpacity={0.7}
 						style={styles.acceptBtn}
-						onPress={() => onAccept(reqId, camera)}
+						onPress={() => onAccept(reqId)}
 					>
 						<Text size={24} color={COLOURS.WHITE} style={{ fontFamily: "Roboto" }}>
 							Accept

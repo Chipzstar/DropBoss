@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Image, View } from "react-native";
+import * as Location from "expo-location";
 import PropTypes from "prop-types";
 import { Block, Button, Input, Text } from "galio-framework";
 import { COLOURS } from "../../constants/Theme";
@@ -7,8 +8,12 @@ import DashIcons from "../DashIcons";
 import styles, { HEIGHT, WIDTH } from "./styles";
 import call from "../../assets/images/btn_call.png";
 import EdgePadding from "../../helpers/EdgePadding";
+import AuthContext from "../../context/AuthContext";
+import { updateUserCoordinates } from "../../config/Fire";
 
 const PickUp = React.forwardRef(({ reqId, details, onCancel, markers, metrics }, ref) => {
+	const [message, setMessage] = useState("");
+	const { user } = useContext(AuthContext)
 	useEffect(() => {
 		let ids = markers.map(marker => marker.id);
 		setTimeout(
@@ -18,6 +23,20 @@ const PickUp = React.forwardRef(({ reqId, details, onCancel, markers, metrics },
 					animated: false
 				})
 			}, 100);
+		setInterval(async () => {
+			let {coords} = await Location.getCurrentPositionAsync({
+				accuracy: Location.Accuracy.BestForNavigation,
+				enableHighAccuracy: true,
+				timeout: 20000,
+				maximumAge: 2000,
+			});
+			let status = await updateUserCoordinates(user, coords)
+			console.log("Status:", status);
+		}, 60*1000)
+		return () => {
+			clearTimeout()
+			clearInterval()
+		}
 	}, []);
 
 	return (
@@ -65,6 +84,8 @@ const PickUp = React.forwardRef(({ reqId, details, onCancel, markers, metrics },
 						bgColor={COLOURS.MSG_FIELD}
 						style={{ height: HEIGHT * 0.075, width: WIDTH * 0.7 }}
 						placeholder='send a message...'
+						value={message}
+						onChangeText={(text) => setMessage(text)}
 					/>
 					<Image source={call} style={styles.callIcon} />
 				</Block>

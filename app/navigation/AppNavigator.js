@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AppLoading } from "expo";
-import { Alert } from "react-native";
+import AsyncStorage from '@react-native-community/async-storage';
 import { createStackNavigator } from "@react-navigation/stack";
 import Dashboard from "../screens/Dashboard/Dashboard";
 import Profile from "../screens/Profile/Profile";
@@ -15,7 +15,9 @@ const MainStack = createStackNavigator();
 
 const MainStackScreen = () => (
 	<MainStack.Navigator headerMode={"none"}>
-		<MainStack.Screen name='Home' component={Dashboard} />
+		<MainStack.Screen name='Home'>
+			{props => <Dashboard {...props}/>}
+		</MainStack.Screen>
 		<MainStack.Screen name='Profile' component={Profile} />
 		<MainStack.Screen name='Settings' component={Settings} />
 	</MainStack.Navigator>
@@ -45,20 +47,23 @@ const AppNavigator = props => {
 		return unsubscribeAuth();
 	}, []);
 
-	function onAuthStateChanged(user) {
+	async function onAuthStateChanged(user) {
 		if (user) {
 			console.log("signed in");
-			setUserToken(user);
+			setUserToken(user ? user.uid : null);
 			setInitializing(false);
 		} else {
-			firebase
-				.auth()
-				.signInWithEmailAndPassword(
-					"chipzstar.dev@googlemail.com",
-					"Chisom11#"
-				)
-				.then(() => console.log("new user signed in!"))
-				.catch(error => console.error(error.code, error.message));
+			try {
+				await firebase
+					.auth()
+					.signInWithEmailAndPassword(
+						"chipzstar.dev@googlemail.com",
+						"Chisom11#"
+					)
+				console.log("new user signed in!");
+			} catch (error) {
+				console.error(error.code, error.message);
+			}
 		}
 	}
 
