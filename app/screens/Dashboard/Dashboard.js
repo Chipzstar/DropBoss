@@ -32,8 +32,7 @@ const Dashboard = props => {
 	const dispatch = useDispatch();
 
 	const [isOnline, setOnlineStatus] = useState(false);
-	const [camera, setCamera] = useState(null)
-	const [coords, setInitialCoords] = useState({ latitude: 0, longitude: 0 });
+	const [coords, setCoords] = useState({ latitude: 0, longitude: 0, latitudeDelta: 0.005, longitudeDelta: 0.005 });
 	const [markers, setMarkers] = useState([]);
 	const [currentReqId, setCurrentReqId] = useState(pickUp.id);
 	const [incomingReqs, updateIncoming] = useState([]);
@@ -41,12 +40,40 @@ const Dashboard = props => {
 	const [newRequest, setNewRequest] = useState(false);
 	const [newRide, setNewRide] = useState(false); //changes when driver accepts a new ride request
 	const [riderDetails, setRiderDetails] = useState(false);
-	const [travelMetrics, setMetrics] = useState({ distance: 0, duration: 0});
+	const [travelMetrics, setMetrics] = useState({ distance: 0, duration: 0 });
 
 	//CONSTANTS & REFS
 	const { user } = useContext(AuthContext);
 	const requestRef = firebase.database().ref(`requests`);
 	const mapViewRef = useRef(null);
+
+	//VARIABLES
+	let newRegion = false;
+
+	const acceptRequest = useCallback(
+		requestId => {
+			markRideAccepted(`requests/${requestId}`, user.uid)
+				.then(({ pickupCoordinate, sourcePlaceName, arrivalTime, firstname }) => {
+					requestRef.off("child_added");
+					dispatch(
+						createPickupInfo({
+							id: requestId,
+							destination: pickupCoordinate,
+							placeName: sourcePlaceName,
+							arrivalTime,
+							riderInfo: {
+								riderName: firstname,
+								rating: 0,
+							},
+						})
+					);
+					console.log("ACCEPTED");
+					setNewRide(true);
+				})
+				.catch(err => Alert.alert("ERROR", err.message));
+		},
+		[newRide]
+	);
 
 	const reset = useCallback(
 		(reqId, type) => {
@@ -75,10 +102,6 @@ const Dashboard = props => {
 		[declinedReqs]
 	);
 
-	function updateMapCamera(mapView){
-		setCamera(mapView);
-	}
-
 	function updateMarkers({ latitude, longitude }) {
 		setMarkers(prevState => {
 			prevState.splice(0, 1, { id: "home", latitude, longitude });
@@ -87,28 +110,19 @@ const Dashboard = props => {
 		});
 	}
 
-	function acceptRequest(requestId) {
-		markRideAccepted(`requests/${requestId}`, user.uid)
-			.then(({pickupCoordinate, sourcePlaceName, arrivalTime, firstname }) => {
-				requestRef.off("child_added");
-				dispatch(createPickupInfo({
-					id: requestId,
-					destination: pickupCoordinate,
-					placeName: sourcePlaceName,
-					arrivalTime,
-					riderInfo: {
-						riderName: firstname,
-						rating: 0
-					}
-				}));
-				console.log("ACCEPTED");
-				setNewRide(true)
-			})
-			.catch(err => Alert.alert("ERROR", err.message));
+	function updateRegion() {
+		newRegion = true;
 	}
+
+	/**
+	 * Re-render checker
+	 */
+	useEffect(() => {
+		console.log("coords:", coords);
+	});
 	/**
 	 * CONSTRUCTOR - used to get drivers current locations, and register device for
-	 *  push notifications
+	 *  push notifications. WILL ONLY RUN ONCE!
 	 */
 	useEffect(() => {
 		console.log("PickUp state:", pickUp);
@@ -124,9 +138,14 @@ const Dashboard = props => {
 				maximumAge: 2000,
 			});
 			//set driver's current location
-			setInitialCoords({
-				latitude,
-				longitude,
+			setCoords(prevState => {
+				let { latitudeDelta, longitudeDelta } = prevState;
+				return {
+					latitude: 51.5447594,
+					latitudeDelta: 0.004999828111856175,
+					longitude: 0.1603327,
+					longitudeDelta: 0.0054747238755226135,
+				};
 			});
 			//update initial marker to represent driver's current location
 			setMarkers(prevState => {
@@ -137,7 +156,7 @@ const Dashboard = props => {
 			//get device/fcm push notification token
 			await UserPermissions.registerPushNotificationsAsync(user);
 			//update user coordinates on database
-			await updateUserCoordinates(user, { latitude, longitude })
+			await updateUserCoordinates(user, { latitude, longitude });
 		})();
 	}, []);
 
@@ -200,7 +219,6 @@ const Dashboard = props => {
 		<Block style={{ ...StyleSheet.absoluteFillObject }}>
 			<StatusBar hidden />
 			<MapView
-				camera={camera}
 				ref={mapViewRef}
 				provider={PROVIDER_GOOGLE}
 				initialRegion={{
@@ -209,12 +227,13 @@ const Dashboard = props => {
 					latitudeDelta: 0.005,
 					longitudeDelta: 0.005,
 				}}
-				region={{
-					...coords,
-					latitudeDelta: 0.005,
-					longitudeDelta: 0.005,
+				region={{ ...coords }}
+				onRegionChangeComplete={region => {
+					if (newRegion) {
+						console.log("NEW REGION SET!", region);
+						setCoords({ ...region });
+					}
 				}}
-				onMapReady={() => console.count("map ready")}
 				showsUserLocation={!(markers.length >= 1)}
 				followUserLocation={!(markers.length > 1)}
 				showsCompass={true}
@@ -265,10 +284,10 @@ const Dashboard = props => {
 						details={riderDetails}
 						onDecline={reset}
 						onAccept={acceptRequest}
-						onCameraChange={updateMapCamera}
 						markers={markers}
 						ref={mapViewRef}
 						metrics={travelMetrics}
+						onAnimation={updateRegion}
 					/>
 				)
 			) : (

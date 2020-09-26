@@ -7,14 +7,13 @@ import { COLOURS } from "../../constants/Theme";
 import DashIcons from "../DashIcons";
 import styles, { HEIGHT, WIDTH } from "./styles";
 import call from "../../assets/images/btn_call.png";
-import EdgePadding from "../../helpers/EdgePadding";
 import AuthContext from "../../context/AuthContext";
 import { updateUserCoordinates } from "../../config/Fire";
 
 const PickUp = React.memo(React.forwardRef(({ reqId, details, onCancel, markers, metrics, updateMarkers }, ref) => {
 	const [message, setMessage] = useState("");
 	const { user } = useContext(AuthContext);
-	let ids = markers.map(marker => marker.id);
+	//let ids = markers.map(marker => marker.id);
 
 	useEffect(() => {
 		setInterval(async () => {
@@ -28,19 +27,19 @@ const PickUp = React.memo(React.forwardRef(({ reqId, details, onCancel, markers,
 			await updateUserCoordinates(user, coords)
 			updateMarkers(coords);
 		}, 20*1000)
-		return clearInterval()
+		return () => clearInterval()
 	}, []);
 
 	useEffect(() => {
 		//TODO - optimize
-		setTimeout(
+		/*setTimeout(
 			() => {
 				ref.current.fitToSuppliedMarkers(ids, {
 					edgePadding: EdgePadding,
 					animated: true
 				})
 			}, 100);
-		return clearTimeout()
+		return clearTimeout()*/
 	}, [markers])
 
 	return (

@@ -8,16 +8,18 @@ import styles from "./styles";
 import EdgePadding from "../../helpers/EdgePadding";
 import * as Location from "expo-location";
 
-const NewRequest = React.forwardRef(
-	({ reqId, details, onDecline, onAccept, markers, metrics }, ref) => {
+const NewRequest = React.memo(
+	React.forwardRef(({ reqId, details, onDecline, onAccept, markers, metrics, onAnimation }, ref) => {
 		/**
 		 * CONSTRUCTOR
 		 */
 		useEffect(() => {
+			onAnimation();
 			let ids = markers.map(marker => marker.id);
 			setTimeout(() => {
 				ref.current.fitToSuppliedMarkers(ids, {
 					edgePadding: EdgePadding,
+					animated: true
 				});
 			}, 1000);
 			return () => clearTimeout();
@@ -55,7 +57,7 @@ const NewRequest = React.forwardRef(
 				</Block>
 			</View>
 		);
-	}
+	})
 );
 
 NewRequest.propTypes = {
@@ -65,7 +67,7 @@ NewRequest.propTypes = {
 	onAccept: PropTypes.func.isRequired,
 	markers: PropTypes.array.isRequired,
 	metrics: PropTypes.object.isRequired,
-	onCameraChange: PropTypes.func.isRequired
+	onAnimation: PropTypes.func.isRequired
 };
 
 export default NewRequest;
