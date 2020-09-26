@@ -11,33 +11,37 @@ import EdgePadding from "../../helpers/EdgePadding";
 import AuthContext from "../../context/AuthContext";
 import { updateUserCoordinates } from "../../config/Fire";
 
-const PickUp = React.forwardRef(({ reqId, details, onCancel, markers, metrics }, ref) => {
+const PickUp = React.memo(React.forwardRef(({ reqId, details, onCancel, markers, metrics, updateMarkers }, ref) => {
 	const [message, setMessage] = useState("");
-	const { user } = useContext(AuthContext)
+	const { user } = useContext(AuthContext);
+	let ids = markers.map(marker => marker.id);
+
 	useEffect(() => {
-		let ids = markers.map(marker => marker.id);
-		setTimeout(
-			() => {
-				ref.current.fitToSuppliedMarkers(ids, {
-					edgePadding: EdgePadding,
-					animated: false
-				})
-			}, 100);
 		setInterval(async () => {
+			console.log("Last known location:", await Location.getLastKnownPositionAsync());
 			let {coords} = await Location.getCurrentPositionAsync({
 				accuracy: Location.Accuracy.BestForNavigation,
 				enableHighAccuracy: true,
 				timeout: 20000,
 				maximumAge: 2000,
 			});
-			let status = await updateUserCoordinates(user, coords)
-			console.log("Status:", status);
-		}, 60*1000)
-		return () => {
-			clearTimeout()
-			clearInterval()
-		}
+			await updateUserCoordinates(user, coords)
+			updateMarkers(coords);
+		}, 20*1000)
+		return clearInterval()
 	}, []);
+
+	useEffect(() => {
+		//TODO - optimize
+		setTimeout(
+			() => {
+				ref.current.fitToSuppliedMarkers(ids, {
+					edgePadding: EdgePadding,
+					animated: true
+				})
+			}, 100);
+		return clearTimeout()
+	}, [markers])
 
 	return (
 		<View style={styles.container}>
@@ -72,10 +76,10 @@ const PickUp = React.forwardRef(({ reqId, details, onCancel, markers, metrics },
 						}}
 					>
 						<Text style={styles.subText}>
-							{details["arrivalTime"]}
+							{details.arrivalTime}
 						</Text>
 						<Text style={styles.subText}>
-							{details.source["name"]}
+							{details["sourceAddress"]}
 						</Text>
 					</Block>
 				</Block>
@@ -92,13 +96,14 @@ const PickUp = React.forwardRef(({ reqId, details, onCancel, markers, metrics },
 			</Block>
 		</View>
 	);
-});
+}));
 
 PickUp.propTypes = {
 	reqId: PropTypes.string.isRequired,
 	details: PropTypes.object.isRequired,
 	onCancel: PropTypes.func.isRequired,
 	markers: PropTypes.array.isRequired,
+	updateMarkers: PropTypes.func.isRequired,
 	metrics: PropTypes.object.isRequired
 };
 

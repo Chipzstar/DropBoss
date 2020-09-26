@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AppLoading } from "expo";
-import AsyncStorage from '@react-native-community/async-storage';
 import { createStackNavigator } from "@react-navigation/stack";
 import Dashboard from "../screens/Dashboard/Dashboard";
 import Profile from "../screens/Profile/Profile";

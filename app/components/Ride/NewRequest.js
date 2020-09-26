@@ -6,6 +6,7 @@ import { COLOURS } from "../../constants/Theme";
 import DashIcons from "../DashIcons";
 import styles from "./styles";
 import EdgePadding from "../../helpers/EdgePadding";
+import * as Location from "expo-location";
 
 const NewRequest = React.forwardRef(
 	({ reqId, details, onDecline, onAccept, markers, metrics }, ref) => {
@@ -14,13 +15,12 @@ const NewRequest = React.forwardRef(
 		 */
 		useEffect(() => {
 			let ids = markers.map(marker => marker.id);
-			setTimeout(
-				() => {
-					ref.current.fitToSuppliedMarkers(ids, {
-						edgePadding: EdgePadding
-					})
-				}, 1000);
-			return clearTimeout()
+			setTimeout(() => {
+				ref.current.fitToSuppliedMarkers(ids, {
+					edgePadding: EdgePadding,
+				});
+			}, 1000);
+			return () => clearTimeout();
 		}, []);
 
 		return (
@@ -44,14 +44,10 @@ const NewRequest = React.forwardRef(
 							{`${Math.round(metrics.duration)} min . ${Math.round(metrics.distance)} km`}
 						</Text>
 						<Text color={COLOURS.HEADING} size={18} style={{ fontFamily: "Lato-Regular" }}>
-							{details.source["name"]}
+							{details.sourceAddress}
 						</Text>
 					</Block>
-					<TouchableOpacity
-						activeOpacity={0.7}
-						style={styles.acceptBtn}
-						onPress={() => onAccept(reqId)}
-					>
+					<TouchableOpacity activeOpacity={0.7} style={styles.acceptBtn} onPress={() => onAccept(reqId)}>
 						<Text size={24} color={COLOURS.WHITE} style={{ fontFamily: "Roboto" }}>
 							Accept
 						</Text>
@@ -68,7 +64,8 @@ NewRequest.propTypes = {
 	onDecline: PropTypes.func.isRequired,
 	onAccept: PropTypes.func.isRequired,
 	markers: PropTypes.array.isRequired,
-	metrics: PropTypes.object.isRequired
+	metrics: PropTypes.object.isRequired,
+	onCameraChange: PropTypes.func.isRequired
 };
 
 export default NewRequest;

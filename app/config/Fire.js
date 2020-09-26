@@ -45,16 +45,20 @@ export const updateUserFcmToken = (driver, fcmToken) => {
 	});
 };
 
-export const markRideAccepted = async (path, userId) => {
+export const markRideAccepted = async (path, driverId) => {
 	return new Promise(async (resolve, reject) => {
 		try {
-			let rideRef = firebase.database().ref(path);
-			let res = await rideRef.update({
+			let reqRef = firebase.database().ref(path);
+			let { pickupCoordinate, destinationCoordinate, sourcePlaceName, destPlaceName, arrivalTime, riderKey } = (await reqRef.once("value")).val();
+			let userRef = firebase.database().ref();
+			let firstname = (await userRef.child("users").child(riderKey).child("firstname").once("value")).val()
+			await reqRef.update({
 				isAccepted: true,
-				driverKey: userId,
+				driverKey: driverId,
 			});
-			resolve(res);
+			resolve({ pickupCoordinate, sourcePlaceName, arrivalTime, firstname });
 		} catch (e) {
+			console.log(e);
 			reject(e);
 		}
 	});

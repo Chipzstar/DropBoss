@@ -1,5 +1,6 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
 import { GOOGLE_MAPS_DIRECTIONS_API_KEY } from "@env";
 import { StatusBar } from "expo-status-bar";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -21,14 +22,20 @@ import { COLOURS, IMAGES } from "../../constants/Theme";
 import styles from "./styles";
 //functions
 import UserPermissions from "../../permissions/UserPermissions";
-import { connect, disconnect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
-import { getRideStatus, setPickUpMode } from "../../store/AsyncStorage";
+import { connect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
+import { createPickupInfo } from "../../store/actions/pickUp";
 
 const Dashboard = props => {
+	//redux
+	const pickUp = useSelector(state => state.pickUp);
+	const dropOff = useSelector(state => state.dropOff);
+	const dispatch = useDispatch();
+
 	const [isOnline, setOnlineStatus] = useState(false);
+	const [camera, setCamera] = useState(null)
 	const [coords, setInitialCoords] = useState({ latitude: 0, longitude: 0 });
-	const [markers, updateMarkers] = useState([]);
-	const [currentReqId, setCurrentReqId] = useState("");
+	const [markers, setMarkers] = useState([]);
+	const [currentReqId, setCurrentReqId] = useState(pickUp.id);
 	const [incomingReqs, updateIncoming] = useState([]);
 	const [declinedReqs, updateDeclined] = useState([]);
 	const [newRequest, setNewRequest] = useState(false);
@@ -49,13 +56,13 @@ const Dashboard = props => {
 				prevState.shift();
 				return prevState;
 			});
-			updateMarkers(prevState => {
+			setMarkers(prevState => {
 				prevState.pop(); // removes element at front of STACK
 				return prevState;
 			});
 			updateDeclined(prevState => {
 				prevState.push(reqId);
-				return prevState;
+				return [...prevState];
 			});
 			if (type === "CANCEL") {
 				console.log("CANCELLED");
@@ -65,26 +72,49 @@ const Dashboard = props => {
 			}
 			return null;
 		},
-		[incomingReqs, declinedReqs, markers]
+		[declinedReqs]
 	);
+
+	function updateMapCamera(mapView){
+		setCamera(mapView);
+	}
+
+	function updateMarkers({ latitude, longitude }) {
+		setMarkers(prevState => {
+			prevState.splice(0, 1, { id: "home", latitude, longitude });
+			console.log("updated markers:", prevState);
+			return [...prevState];
+		});
+	}
 
 	function acceptRequest(requestId) {
 		markRideAccepted(`requests/${requestId}`, user.uid)
-			.then(() => {
+			.then(({pickupCoordinate, sourcePlaceName, arrivalTime, firstname }) => {
 				requestRef.off("child_added");
+				dispatch(createPickupInfo({
+					id: requestId,
+					destination: pickupCoordinate,
+					placeName: sourcePlaceName,
+					arrivalTime,
+					riderInfo: {
+						riderName: firstname,
+						rating: 0
+					}
+				}));
 				console.log("ACCEPTED");
-				setPickUpMode().then(() => setNewRide(true))
+				setNewRide(true)
 			})
 			.catch(err => Alert.alert("ERROR", err.message));
 	}
-
 	/**
 	 * CONSTRUCTOR - used to get drivers current locations, and register device for
 	 *  push notifications
 	 */
 	useEffect(() => {
+		console.log("PickUp state:", pickUp);
 		(async () => {
 			await UserPermissions.getLocationPermission();
+			//retrieve driver's current location
 			let {
 				coords: { latitude, longitude },
 			} = await Location.getCurrentPositionAsync({
@@ -93,16 +123,20 @@ const Dashboard = props => {
 				timeout: 20000,
 				maximumAge: 2000,
 			});
+			//set driver's current location
 			setInitialCoords({
 				latitude,
 				longitude,
 			});
-			updateMarkers(prevState => {
+			//update initial marker to represent driver's current location
+			setMarkers(prevState => {
 				prevState.splice(0, 1, { id: "home", latitude, longitude });
 				console.log("updated markers", prevState);
 				return prevState;
 			});
+			//get device/fcm push notification token
 			await UserPermissions.registerPushNotificationsAsync(user);
+			//update user coordinates on database
 			await updateUserCoordinates(user, { latitude, longitude })
 		})();
 	}, []);
@@ -135,14 +169,12 @@ const Dashboard = props => {
 										!declinedReqs.includes(snapshot.key) &&
 										snapshot.val().isAccepted !== true
 									) {
-										updateMarkers(prevState => {
-											let { lat: latitude, lng: longitude } = snapshot.val().source[
-												"geometry"
-												].location;
+										setMarkers(prevState => {
+											let coords = snapshot.val().pickupCoordinate;
 											prevState.push({
 												id: "pickup",
-												latitude,
-												longitude,
+												latitude: coords[0],
+												longitude: coords[1],
 											});
 											console.log("updated markers:", prevState);
 											return prevState;
@@ -168,11 +200,12 @@ const Dashboard = props => {
 		<Block style={{ ...StyleSheet.absoluteFillObject }}>
 			<StatusBar hidden />
 			<MapView
+				camera={camera}
 				ref={mapViewRef}
 				provider={PROVIDER_GOOGLE}
 				initialRegion={{
-					latitude: 51.54399,
-					longitude: 0.15706,
+					latitude: 0,
+					longitude: 0,
 					latitudeDelta: 0.005,
 					longitudeDelta: 0.005,
 				}}
@@ -181,8 +214,9 @@ const Dashboard = props => {
 					latitudeDelta: 0.005,
 					longitudeDelta: 0.005,
 				}}
-				showsUserLocation={!markers.length}
-				followUserLocation={!markers.length}
+				onMapReady={() => console.count("map ready")}
+				showsUserLocation={!(markers.length >= 1)}
+				followUserLocation={!(markers.length > 1)}
 				showsCompass={true}
 				style={[styles.mapContainer, { flex: !riderDetails ? 1 : 0.7 }]}
 			>
@@ -221,6 +255,7 @@ const Dashboard = props => {
 						details={riderDetails}
 						onCancel={reset}
 						markers={markers}
+						updateMarkers={updateMarkers}
 						metrics={travelMetrics}
 						ref={mapViewRef}
 					/>
@@ -230,6 +265,7 @@ const Dashboard = props => {
 						details={riderDetails}
 						onDecline={reset}
 						onAccept={acceptRequest}
+						onCameraChange={updateMapCamera}
 						markers={markers}
 						ref={mapViewRef}
 						metrics={travelMetrics}
