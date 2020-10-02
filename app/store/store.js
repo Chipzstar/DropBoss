@@ -8,7 +8,9 @@ import thunk from "redux-thunk";
 //Middleware: Redux Persist Config
 const persistConfig = {
 	key: "root",
-	storage: AsyncStorage
+	storage: AsyncStorage,
+	whitelist: ['onlineStatus', 'pickUp'],
+	blacklist: []
 };
 
 //Middleware: Redux Persist Persisted Reducer

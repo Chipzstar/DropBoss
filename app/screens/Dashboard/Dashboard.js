@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { GOOGLE_MAPS_DIRECTIONS_API_KEY } from "@env";
@@ -23,48 +23,54 @@ import styles from "./styles";
 //functions
 import UserPermissions from "../../permissions/UserPermissions";
 import { connect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
-import { createPickupInfo } from "../../store/actions/pickUp";
+import { createPickupInfo, updatePickupInfo } from "../../store/actions/pickUp";
+import { SET_ONLINE_STATUS } from "../../store/reducers";
 
 const Dashboard = props => {
 	//redux
+	const onlineStatus = useSelector(state => state.onlineStatus);
 	const pickUp = useSelector(state => state.pickUp);
 	const dropOff = useSelector(state => state.dropOff);
 	const dispatch = useDispatch();
 
-	const [isOnline, setOnlineStatus] = useState(false);
+	const [isOnline, setOnlineStatus] = useState(onlineStatus);
 	const [coords, setCoords] = useState({ latitude: 0, longitude: 0, latitudeDelta: 0.005, longitudeDelta: 0.005 });
-	const [markers, setMarkers] = useState([]);
-	const [currentReqId, setCurrentReqId] = useState(pickUp.id);
+	const [markers, setMarkers] = useState(pickUp.markers);
+	const [currentReqId, setCurrentReqId] = useState(pickUp.tripId);
 	const [incomingReqs, updateIncoming] = useState([]);
 	const [declinedReqs, updateDeclined] = useState([]);
 	const [newRequest, setNewRequest] = useState(false);
-	const [newRide, setNewRide] = useState(false); //changes when driver accepts a new ride request
-	const [riderDetails, setRiderDetails] = useState(false);
+	const [newRide, setNewRide] = useState(Boolean(pickUp.tripId)); //changes when driver accepts a new ride request
+	const [rideDetails, setRideDetails] = useState(pickUp.details);
 	const [travelMetrics, setMetrics] = useState({ distance: 0, duration: 0 });
 
 	//CONSTANTS & REFS
 	const { user } = useContext(AuthContext);
-	const requestRef = firebase.database().ref(`requests`);
+	const requestRef = firebase.database().ref("trips");
 	const mapViewRef = useRef(null);
 
 	//VARIABLES
 	let newRegion = false;
 
 	const acceptRequest = useCallback(
-		requestId => {
-			markRideAccepted(`requests/${requestId}`, user.uid)
-				.then(({ pickupCoordinate, sourcePlaceName, arrivalTime, firstname }) => {
+		tripId => {
+			markRideAccepted(`trips/${tripId}`, user.uid)
+				.then(({ pickupCoordinate, sourcePlaceName, sourceAddress, arrivalTime, firstname }) => {
 					requestRef.off("child_added");
 					dispatch(
-						createPickupInfo({
-							id: requestId,
-							destination: pickupCoordinate,
-							placeName: sourcePlaceName,
-							arrivalTime,
+						updatePickupInfo({
+							tripId,
+							details: {
+								coords: pickupCoordinate,
+								sourceAddress,
+								sourcePlaceName,
+								arrivalTime,
+							},
 							riderInfo: {
 								riderName: firstname,
 								rating: 0,
 							},
+							markers,
 						})
 					);
 					console.log("ACCEPTED");
@@ -72,13 +78,13 @@ const Dashboard = props => {
 				})
 				.catch(err => Alert.alert("ERROR", err.message));
 		},
-		[newRide]
+		[newRide, markers, travelMetrics]
 	);
 
 	const reset = useCallback(
 		(reqId, type) => {
 			setNewRequest(false);
-			setRiderDetails(false);
+			setRideDetails(false);
 			updateIncoming(prevState => {
 				prevState.shift();
 				return prevState;
@@ -102,13 +108,17 @@ const Dashboard = props => {
 		[declinedReqs]
 	);
 
-	function updateMarkers({ latitude, longitude }) {
-		setMarkers(prevState => {
-			prevState.splice(0, 1, { id: "home", latitude, longitude });
-			console.log("updated markers:", prevState);
-			return [...prevState];
-		});
-	}
+	const updateMarkers = useCallback(
+		({ latitude, longitude }) => {
+			//setCoords({...coords, latitude, longitude});
+			setMarkers(prevState => {
+				prevState.splice(0, 1, { id: "home", latitude, longitude });
+				console.log("updated markers:", prevState);
+				return [...prevState];
+			});
+		},
+		[markers]
+	);
 
 	function updateRegion() {
 		newRegion = true;
@@ -118,7 +128,7 @@ const Dashboard = props => {
 	 * Re-render checker
 	 */
 	useEffect(() => {
-		console.log("coords:", coords);
+		//console.log("coords:", coords);
 	});
 	/**
 	 * CONSTRUCTOR - used to get drivers current locations, and register device for
@@ -138,14 +148,10 @@ const Dashboard = props => {
 				maximumAge: 2000,
 			});
 			//set driver's current location
-			setCoords(prevState => {
-				let { latitudeDelta, longitudeDelta } = prevState;
-				return {
-					latitude: 51.5447594,
-					latitudeDelta: 0.004999828111856175,
-					longitude: 0.1603327,
-					longitudeDelta: 0.0054747238755226135,
-				};
+			setCoords({
+				...coords,
+				latitude,
+				longitude,
 			});
 			//update initial marker to represent driver's current location
 			setMarkers(prevState => {
@@ -165,47 +171,50 @@ const Dashboard = props => {
 	 */
 	useEffect(() => {
 		(async () => {
+			//check user status is online
 			if (isOnline) {
 				await connect();
-				//init firebase database event listener
-				setTimeout(
-					() =>
-						requestRef
-							.orderByKey()
-							.limitToLast(1)
-							.on(
-								"child_added",
-								snapshot => {
-									updateIncoming(prevState => {
-										console.log("initial queue:", prevState);
-										prevState.push(snapshot.key);
-										console.log("updated queue:", prevState);
-										return prevState;
-									});
-									console.log("Key:", snapshot.key);
-									if (
-										snapshot.key !== undefined &&
-										!declinedReqs.includes(snapshot.key) &&
-										snapshot.val().isAccepted !== true
-									) {
-										setMarkers(prevState => {
-											let coords = snapshot.val().pickupCoordinate;
-											prevState.push({
-												id: "pickup",
-												latitude: coords[0],
-												longitude: coords[1],
-											});
-											console.log("updated markers:", prevState);
+				//if there is currently NO ride active
+				if (!newRide)
+					//init firebase database event listener
+					setTimeout(
+						() =>
+							requestRef
+								.orderByKey()
+								.limitToLast(1)
+								.on(
+									"child_added",
+									snapshot => {
+										updateIncoming(prevState => {
+											console.log("initial queue:", prevState);
+											prevState.push(snapshot.key);
+											console.log("updated queue:", prevState);
 											return prevState;
 										});
-										setCurrentReqId(snapshot.key);
-										setRiderDetails(snapshot.val());
-									}
-								},
-								err => Alert.alert("Error:", err.message)
-							),
-					1500
-				);
+										console.log("Key:", snapshot.key);
+										if (
+											snapshot.key !== undefined &&
+											!declinedReqs.includes(snapshot.key) &&
+											snapshot.val().tripAccepted !== true
+										) {
+											setMarkers(prevState => {
+												let coords = snapshot.val().pickupCoordinate;
+												prevState.push({
+													id: "pickup",
+													latitude: coords[0],
+													longitude: coords[1],
+												});
+												console.log("updated markers:", prevState);
+												return prevState;
+											});
+											setCurrentReqId(snapshot.key);
+											setRideDetails(snapshot.val());
+										}
+									},
+									err => Alert.alert("Error:", err.message)
+								),
+						1500
+					);
 			} else {
 				//end firebase db listener
 				requestRef.off("child_added");
@@ -213,6 +222,7 @@ const Dashboard = props => {
 				console.log("unsubscribed from ride requests");
 			}
 		})();
+		return () => dispatch(SET_ONLINE_STATUS(isOnline))
 	}, [isOnline, reset]);
 
 	return (
@@ -229,30 +239,27 @@ const Dashboard = props => {
 				}}
 				region={{ ...coords }}
 				onRegionChangeComplete={region => {
-					if (newRegion) {
-						console.log("NEW REGION SET!", region);
-						setCoords({ ...region });
-					}
+					if (newRegion) setCoords({ ...region });
 				}}
 				showsUserLocation={!(markers.length >= 1)}
 				followUserLocation={!(markers.length > 1)}
 				showsCompass={true}
-				style={[styles.mapContainer, { flex: !riderDetails ? 1 : 0.7 }]}
+				style={[styles.mapContainer, { flex: !rideDetails ? 1 : 0.7 }]}
 			>
 				{markers.map(({ id, latitude, longitude }, index) => (
 					<Marker key={index} coordinate={{ latitude, longitude }} identifier={id}>
 						{index === 0 && <Image source={IMAGES.carTop} style={{ width: 25, height: 50 }} />}
 					</Marker>
 				))}
-				{riderDetails && (
+				{rideDetails && (
 					<MapViewDirections
-						origin={coords}
+						origin={{ latitude: markers[0].latitude, longitude: markers[0].longitude }}
 						destination={{
 							latitude: markers[markers.length - 1].latitude,
 							longitude: markers[markers.length - 1].longitude,
 						}}
 						apikey={GOOGLE_MAPS_DIRECTIONS_API_KEY}
-						strokeWidth={3}
+						strokeWidth={5}
 						strokeColor={COLOURS.PRIMARY}
 						onStart={params => {
 							console.log(`Started routing between "${params.origin}" and "${params.destination}"`);
@@ -260,6 +267,7 @@ const Dashboard = props => {
 						onReady={({ distance, duration }) => {
 							console.log(`Distance: ${distance} km`);
 							console.log(`Duration: ${duration} min.`);
+							dispatch(updatePickupInfo({ metrics: { distance, duration } }));
 							setMetrics({ distance, duration });
 							setNewRequest(true);
 						}}
@@ -270,8 +278,8 @@ const Dashboard = props => {
 			{isOnline && newRequest ? (
 				newRide ? (
 					<PickUp
-						reqId={currentReqId}
-						details={riderDetails}
+						tripId={currentReqId}
+						details={rideDetails}
 						onCancel={reset}
 						markers={markers}
 						updateMarkers={updateMarkers}
@@ -281,7 +289,7 @@ const Dashboard = props => {
 				) : (
 					<NewRequest
 						reqId={currentReqId}
-						details={riderDetails}
+						details={rideDetails}
 						onDecline={reset}
 						onAccept={acceptRequest}
 						markers={markers}

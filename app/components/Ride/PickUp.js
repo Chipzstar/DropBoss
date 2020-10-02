@@ -9,14 +9,19 @@ import styles, { HEIGHT, WIDTH } from "./styles";
 import call from "../../assets/images/btn_call.png";
 import AuthContext from "../../context/AuthContext";
 import { updateUserCoordinates } from "../../config/Fire";
+import { useSelector } from "react-redux";
+import EdgePadding from "../../helpers/EdgePadding";
 
-const PickUp = React.memo(React.forwardRef(({ reqId, details, onCancel, markers, metrics, updateMarkers }, ref) => {
-	const [message, setMessage] = useState("");
+const PickUp = React.memo(React.forwardRef((props, ref) => {
 	const { user } = useContext(AuthContext);
-	//let ids = markers.map(marker => marker.id);
+	const pickUp = useSelector(state => state.pickUp)
+	const { onCancel, updateMarkers, markers } = props;
+	const { tripId, details, metrics } = pickUp;
+	const [message, setMessage] = useState("");
+	let ids = markers.map(marker => marker.id);
 
 	useEffect(() => {
-		setInterval(async () => {
+		const interval = setInterval(async () => {
 			console.log("Last known location:", await Location.getLastKnownPositionAsync());
 			let {coords} = await Location.getCurrentPositionAsync({
 				accuracy: Location.Accuracy.BestForNavigation,
@@ -27,19 +32,19 @@ const PickUp = React.memo(React.forwardRef(({ reqId, details, onCancel, markers,
 			await updateUserCoordinates(user, coords)
 			updateMarkers(coords);
 		}, 20*1000)
-		return () => clearInterval()
+		return () => clearInterval(interval)
 	}, []);
 
 	useEffect(() => {
 		//TODO - optimize
-		/*setTimeout(
+		const timeout = setTimeout(
 			() => {
 				ref.current.fitToSuppliedMarkers(ids, {
 					edgePadding: EdgePadding,
 					animated: true
 				})
-			}, 100);
-		return clearTimeout()*/
+			}, 500);
+		return () => clearTimeout(timeout)
 	}, [markers])
 
 	return (
@@ -47,7 +52,7 @@ const PickUp = React.memo(React.forwardRef(({ reqId, details, onCancel, markers,
 			<Button
 				color={COLOURS.WHITE}
 				style={styles.declineBtn}
-				onPress={() => onCancel(reqId, "CANCEL")}
+				onPress={() => onCancel(tripId, "CANCEL")}
 			>
 				<DashIcons
 					style={{ marginRight: 10 }}
@@ -95,10 +100,12 @@ const PickUp = React.memo(React.forwardRef(({ reqId, details, onCancel, markers,
 			</Block>
 		</View>
 	);
+}), ((prevProps, nextProps) => {
+	return prevProps.markers[0] !== nextProps.markers[0];
 }));
 
 PickUp.propTypes = {
-	reqId: PropTypes.string.isRequired,
+	tripId: PropTypes.string.isRequired,
 	details: PropTypes.object.isRequired,
 	onCancel: PropTypes.func.isRequired,
 	markers: PropTypes.array.isRequired,

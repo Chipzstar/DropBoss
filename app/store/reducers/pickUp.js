@@ -1,13 +1,16 @@
-import { CREATE_PICKUP, UPDATE_PICKUP, REMOVE_PICKUP, GET_PICKUP } from "../actions/pickUp";
+import { CREATE_PICKUP, UPDATE_PICKUP, REMOVE_PICKUP, GET_PICKUP } from "../actionTypes";
 
 const initialState = {
-	id: "",
-	destination: [],
-	placeName: "",
-	arrivalTime: "",
+	tripId: "",
+	details: false,
 	riderInfo: {
 		riderName: "",
 		rating: 0.0
+	},
+	markers: [],
+	metrics: {
+		distance: 0,
+		duration: 0
 	}
 }
 

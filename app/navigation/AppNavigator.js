@@ -9,6 +9,8 @@ import { AuthProvider } from "../context/AuthContext";
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/auth";
 import "@react-native-firebase/messaging";
+import { RESET_ACTION } from "../store/reducers";
+import { useDispatch } from "react-redux";
 
 const MainStack = createStackNavigator();
 
@@ -23,6 +25,7 @@ const MainStackScreen = () => (
 );
 
 const AppNavigator = props => {
+	const dispatch = useDispatch();
 	const [initializing, setInitializing] = useState(true);
 	const [userToken, setUserToken] = useState(null);
 
@@ -40,6 +43,7 @@ const AppNavigator = props => {
 				remoteMessage.notification,
 			);
 		});*/
+		//dispatch(RESET_ACTION);
 		const unsubscribeAuth = firebase
 			.auth()
 			.onAuthStateChanged(onAuthStateChanged);
