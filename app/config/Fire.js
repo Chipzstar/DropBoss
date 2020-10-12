@@ -1,3 +1,4 @@
+import moment from "moment";
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
 import "@react-native-firebase/messaging";
@@ -83,3 +84,26 @@ export const updateUserCoordinates = async (user, { latitude, longitude }) => {
 		}
 	});
 };
+
+export const updateArrivalTime = async (user, tripId, duration) => {
+	function getNewArrivalTime() {
+		let val = moment().add(duration, 'm')
+		return val.format("HH:mm");
+	}
+	return new Promise(async (resolve, reject) => {
+		try {
+			if(user){
+				await firebase
+					.database()
+					.ref(`trips/${tripId}`)
+					.update({
+						arrivalTime: `${getNewArrivalTime()} arrival`,
+					});
+			}
+			resolve(`${getNewArrivalTime()} arrival`)
+		} catch (err) {
+			console.error(err)
+			reject(err)
+		}
+	})
+}

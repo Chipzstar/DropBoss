@@ -9,8 +9,8 @@ import { AuthProvider } from "../context/AuthContext";
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/auth";
 import "@react-native-firebase/messaging";
-import { RESET_ACTION } from "../store/reducers";
 import { useDispatch } from "react-redux";
+import { RESET_ACTION } from "../store/reducers";
 
 const MainStack = createStackNavigator();
 

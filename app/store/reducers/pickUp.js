@@ -1,4 +1,4 @@
-import { CREATE_PICKUP, UPDATE_PICKUP, REMOVE_PICKUP, GET_PICKUP } from "../actionTypes";
+import { CREATE_PICKUP, UPDATE_PICKUP, REMOVE_PICKUP } from "../actionTypes";
 
 const initialState = {
 	tripId: "",

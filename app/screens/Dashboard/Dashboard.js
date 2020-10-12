@@ -23,14 +23,12 @@ import styles from "./styles";
 //functions
 import UserPermissions from "../../permissions/UserPermissions";
 import { connect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
-import { createPickupInfo, updatePickupInfo } from "../../store/actions/pickUp";
+import { createPickupInfo, removePickupInfo, updatePickupInfo } from "../../store/actions/pickUp";
 import { SET_ONLINE_STATUS } from "../../store/reducers";
 
 const Dashboard = props => {
 	//redux
-	const onlineStatus = useSelector(state => state.onlineStatus);
-	const pickUp = useSelector(state => state.pickUp);
-	const dropOff = useSelector(state => state.dropOff);
+	const { pickUp, dropOff, onlineStatus } = useSelector(state => state);
 	const dispatch = useDispatch();
 
 	const [isOnline, setOnlineStatus] = useState(onlineStatus);
@@ -97,6 +95,7 @@ const Dashboard = props => {
 				prevState.push(reqId);
 				return [...prevState];
 			});
+			dispatch(removePickupInfo(currentReqId))
 			if (type === "CANCEL") {
 				console.log("CANCELLED");
 				setNewRide(false);
@@ -110,7 +109,6 @@ const Dashboard = props => {
 
 	const updateMarkers = useCallback(
 		({ latitude, longitude }) => {
-			//setCoords({...coords, latitude, longitude});
 			setMarkers(prevState => {
 				prevState.splice(0, 1, { id: "home", latitude, longitude });
 				console.log("updated markers:", prevState);
@@ -222,7 +220,7 @@ const Dashboard = props => {
 				console.log("unsubscribed from ride requests");
 			}
 		})();
-		return () => dispatch(SET_ONLINE_STATUS(isOnline))
+		return () => dispatch(SET_ONLINE_STATUS(isOnline));
 	}, [isOnline, reset]);
 
 	return (

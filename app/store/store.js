@@ -10,7 +10,7 @@ const persistConfig = {
 	key: "root",
 	storage: AsyncStorage,
 	whitelist: ['onlineStatus', 'pickUp'],
-	blacklist: []
+	blacklist: ['dropOff']
 };
 
 //Middleware: Redux Persist Persisted Reducer

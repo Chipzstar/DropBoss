@@ -30,7 +30,7 @@ export const updatePickupThunk = id => {
 		console.log("GET STATE:", getState());
 		firebase
 			.database()
-			.ref(`requests/${id}`)
+			.ref(`trips/${id}`)
 			.once("value")
 			.then(snap => {
 				console.log(snap.val());
