@@ -8,7 +8,7 @@ export const {height: HEIGHT} = Dimensions.get("window"); //Max Height of phone 
 const BTN_SIZE = 134;
 
 export default (styles = StyleSheet.create({
-	container: {
+	pickUpContainer: {
 		position: "absolute",
 		top: 0,
 		left: 0,
@@ -16,6 +16,15 @@ export default (styles = StyleSheet.create({
 		bottom: 0,
 		alignItems: "center",
 		justifyContent: "space-between",
+	},
+	dropOffContainer: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		alignItems: "center",
+		justifyContent: "flex-end",
 	},
 	declineBtn: {
 		display: "flex",
@@ -29,13 +38,13 @@ export default (styles = StyleSheet.create({
 	},
 	rideContainer: {
 		backgroundColor: COLOURS.WHITE,
+		flex: 0.3,
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "flex-end",
-		flex: 0.3,
 		paddingHorizontal: 20,
 	},
-	addressContainer: {
+	pickupAddressContainer: {
 		display: "flex",
 		backgroundColor: COLOURS.WHITE,
 		width: WIDTH,
@@ -43,6 +52,16 @@ export default (styles = StyleSheet.create({
 		alignItems: "flex-start",
 		paddingHorizontal: 25,
 		justifyContent: "center",
+		elevation: 3
+	},
+	dropoffAddressContainer: {
+		display: "flex",
+		backgroundColor: COLOURS.WHITE,
+		width: WIDTH,
+		height: HEIGHT * 0.3,
+		alignItems: "flex-start",
+		paddingHorizontal: 25,
+		justifyContent: "flex-start",
 		elevation: 3
 	},
 	acceptBtn: {

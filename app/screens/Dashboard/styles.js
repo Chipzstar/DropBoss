@@ -8,6 +8,7 @@ const BTN_SIZE = 134;
 
 export default (styles = StyleSheet.create({
 	mapContainer: {
+		paddingTop: 20,
 		alignItems: "center",
 		justifyContent: "center",
 	},

@@ -11,6 +11,7 @@ import "@react-native-firebase/auth";
 import "@react-native-firebase/messaging";
 import { useDispatch } from "react-redux";
 import { RESET_ACTION } from "../store/reducers";
+import UserPermissions from "../permissions/UserPermissions";
 
 const MainStack = createStackNavigator();
 
@@ -53,6 +54,10 @@ const AppNavigator = props => {
 	async function onAuthStateChanged(user) {
 		if (user) {
 			console.log("signed in");
+			//get location permissions
+			await UserPermissions.getLocationPermission();
+			//get device/fcm push notification token
+			await UserPermissions.registerPushNotificationsAsync(user);
 			setUserToken(user ? user.uid : null);
 			setInitializing(false);
 		} else {

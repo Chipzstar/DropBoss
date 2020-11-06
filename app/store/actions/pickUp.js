@@ -43,11 +43,3 @@ export const updatePickupThunk = id => {
 			});
 	};
 };
-
-/*export const newTrip = (data) => {
-	return (dispatch, getState) => {
-		firebase.database().ref(`trips`).push({
-			...data
-		}).then(() => dispatch(createPickupInfo(data)))
-	}
-}*/

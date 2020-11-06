@@ -6,7 +6,6 @@ import { COLOURS } from "../../constants/Theme";
 import DashIcons from "../DashIcons";
 import styles from "./styles";
 import EdgePadding from "../../helpers/EdgePadding";
-import * as Location from "expo-location";
 
 const NewRequest = React.memo(
 	React.forwardRef(({ reqId, details, onDecline, onAccept, markers, metrics, onAnimation }, ref) => {
@@ -14,19 +13,19 @@ const NewRequest = React.memo(
 		 * CONSTRUCTOR
 		 */
 		useEffect(() => {
-			onAnimation();
 			let ids = markers.map(marker => marker.id);
 			setTimeout(() => {
-				ref.current.fitToSuppliedMarkers(ids, {
+				ref["current"].fitToSuppliedMarkers(ids, {
 					edgePadding: EdgePadding,
 					animated: true
 				});
+				onAnimation();
 			}, 1000);
 			return () => clearTimeout();
 		}, []);
 
 		return (
-			<View style={styles.container}>
+			<View style={styles.pickUpContainer}>
 				<Button color={COLOURS.WHITE} style={styles.declineBtn} onPress={() => onDecline(reqId, "DECLINE")}>
 					<DashIcons style={{ marginRight: 10 }} name={"close"} size={15} color={COLOURS.TEXT} />
 					<Text size={18} color={COLOURS.TEXT}>
@@ -34,7 +33,7 @@ const NewRequest = React.memo(
 					</Text>
 				</Button>
 				<Block style={styles.rideContainer}>
-					<Block style={styles.addressContainer}>
+					<Block style={styles.pickupAddressContainer}>
 						<Text
 							color={COLOURS.HEADING}
 							size={36}

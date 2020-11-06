@@ -1,9 +1,9 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Alert, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { GOOGLE_MAPS_DIRECTIONS_API_KEY } from "@env";
 import { StatusBar } from "expo-status-bar";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Callout, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { Block, Text } from "galio-framework";
 import * as Location from "expo-location";
@@ -11,36 +11,41 @@ import * as Location from "expo-location";
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
 import "@react-native-firebase/messaging";
+import { connect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
 //assets
 import oscar from "../../assets/images/oscar.jpg";
 //components
 import NewRequest from "../../components/Ride/NewRequest";
-import PickUp from "../../components/Ride/PickUp";
+import NewRide from "../../components/Ride/NewRide";
+import PickupModal from "../../components/Modals/PickupModal";
 import AuthContext from "../../context/AuthContext";
 //styles
 import { COLOURS, IMAGES } from "../../constants/Theme";
 import styles from "./styles";
-//functions
-import UserPermissions from "../../permissions/UserPermissions";
-import { connect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
-import { createPickupInfo, removePickupInfo, updatePickupInfo } from "../../store/actions/pickUp";
-import { SET_ONLINE_STATUS } from "../../store/reducers";
+//redux
+import { updatePickupInfo } from "../../store/actions/pickUp";
+import { updateDropoffInfo } from "../../store/actions/dropOff";
+import { CLEAR_RIDE_STATUS, SET_ONLINE_STATUS } from "../../store/reducers";
+import { REMOVE_DROPOFF, REMOVE_PICKUP, RIDE_STATUS } from "../../store/actionTypes";
+import DropoffModal from "../../components/Modals/DropoffModal";
 
 const Dashboard = props => {
 	//redux
-	const { pickUp, dropOff, onlineStatus } = useSelector(state => state);
+	const { pickUp, rideStatus, dropOff, onlineStatus } = useSelector(state =>  state);
 	const dispatch = useDispatch();
 
 	const [isOnline, setOnlineStatus] = useState(onlineStatus);
 	const [coords, setCoords] = useState({ latitude: 0, longitude: 0, latitudeDelta: 0.005, longitudeDelta: 0.005 });
-	const [markers, setMarkers] = useState(pickUp.markers);
-	const [currentReqId, setCurrentReqId] = useState(pickUp.tripId);
+	const [markers, setMarkers] = useState(rideStatus.key === 2 ? dropOff.markers : pickUp.markers);
+	const [currentTripId, setCurrentTripId] = useState(rideStatus.tripId);
 	const [incomingReqs, updateIncoming] = useState([]);
 	const [declinedReqs, updateDeclined] = useState([]);
 	const [newRequest, setNewRequest] = useState(false);
-	const [newRide, setNewRide] = useState(Boolean(pickUp.tripId)); //changes when driver accepts a new ride request
-	const [rideDetails, setRideDetails] = useState(pickUp.details);
+	const [newRide, setNewRide] = useState(Boolean(rideStatus.tripId)); //changes when driver accepts a new ride request
+	const [rideDetails, setRideDetails] = useState(rideStatus.key === 2 ? dropOff.details : pickUp.details);
 	const [travelMetrics, setMetrics] = useState({ distance: 0, duration: 0 });
+	const [isSourceVisible, setSourceModalVisible] = useState(false);
+	const [isDestVisible, setDestModalVisible] = useState(false);
 
 	//CONSTANTS & REFS
 	const { user } = useContext(AuthContext);
@@ -53,27 +58,52 @@ const Dashboard = props => {
 	const acceptRequest = useCallback(
 		tripId => {
 			markRideAccepted(`trips/${tripId}`, user.uid)
-				.then(({ pickupCoordinate, sourcePlaceName, sourceAddress, arrivalTime, firstname }) => {
-					requestRef.off("child_added");
-					dispatch(
-						updatePickupInfo({
-							tripId,
-							details: {
-								coords: pickupCoordinate,
-								sourceAddress,
-								sourcePlaceName,
-								arrivalTime,
-							},
-							riderInfo: {
-								riderName: firstname,
-								rating: 0,
-							},
-							markers,
-						})
-					);
-					console.log("ACCEPTED");
-					setNewRide(true);
-				})
+				.then(
+					({
+						pickupCoordinate,
+						destinationCoordinate,
+						sourcePlaceName,
+						sourceAddress,
+						destPlaceName,
+						destAddress,
+						arrivalTime,
+						firstname,
+					}) => {
+						requestRef.off("child_added");
+						console.log("ACCEPTED");
+						dispatch(
+							updatePickupInfo({
+								details: {
+									coords: pickupCoordinate,
+									sourceAddress,
+									sourcePlaceName,
+									arrivalTime,
+								},
+								riderInfo: {
+									riderName: firstname,
+									rating: 0,
+								},
+								markers: markers.filter(mkr => mkr.id !== "dropoff"),
+							})
+						);
+						dispatch(
+							updateDropoffInfo({
+								details: {
+									coords: destinationCoordinate,
+									destAddress,
+									destPlaceName,
+								},
+								riderInfo: {
+									riderName: firstname,
+									rating: 0,
+								},
+								markers: markers.filter(mkr => mkr.id !== "pickup"),
+							})
+						);
+						dispatch({ type: RIDE_STATUS.ON_PICKUP, id: tripId });
+						setNewRide(true);
+					}
+				)
 				.catch(err => Alert.alert("ERROR", err.message));
 		},
 		[newRide, markers, travelMetrics]
@@ -81,23 +111,23 @@ const Dashboard = props => {
 
 	const reset = useCallback(
 		(reqId, type) => {
+			setSourceModalVisible(false);
 			setNewRequest(false);
 			setRideDetails(false);
 			updateIncoming(prevState => {
 				prevState.shift();
 				return prevState;
 			});
-			setMarkers(prevState => {
-				prevState.pop(); // removes element at front of STACK
-				return prevState;
-			});
+			setMarkers(prevState => []); //clear the contents of markers
 			updateDeclined(prevState => {
 				prevState.push(reqId);
 				return [...prevState];
 			});
-			dispatch(removePickupInfo(currentReqId))
+			dispatch({ type: REMOVE_PICKUP });
 			if (type === "CANCEL") {
 				console.log("CANCELLED");
+				dispatch(CLEAR_RIDE_STATUS);
+				dispatch({ type: REMOVE_DROPOFF });
 				setNewRide(false);
 			} else {
 				console.log("DECLINED");
@@ -107,10 +137,32 @@ const Dashboard = props => {
 		[declinedReqs]
 	);
 
+	const confirm = useCallback(
+		({ latitude, longitude }) => {
+			setSourceModalVisible(false);
+			dispatch({ type: RIDE_STATUS.ON_DROPOFF, id: currentTripId });
+			updateRegion();
+			setMarkers(prevState => {
+				prevState.splice(1, 1, {
+					id: "dropoff",
+					latitude,
+					longitude,
+				});
+				console.log("updated markers:", prevState);
+				return prevState;
+			});
+		},
+		[currentTripId]
+	);
+
+	const complete = useCallback((tripId) => {
+		dispatch({ type: RIDE_STATUS.ON_COMPLETE, id: tripId });
+	}, [])
+
 	const updateMarkers = useCallback(
 		({ latitude, longitude }) => {
 			setMarkers(prevState => {
-				prevState.splice(0, 1, { id: "home", latitude, longitude });
+				prevState.splice(0, 1, { id: "current", latitude, longitude });
 				console.log("updated markers:", prevState);
 				return [...prevState];
 			});
@@ -133,9 +185,8 @@ const Dashboard = props => {
 	 *  push notifications. WILL ONLY RUN ONCE!
 	 */
 	useEffect(() => {
-		console.log("PickUp state:", pickUp);
+		console.log("New ride:", newRide);
 		(async () => {
-			await UserPermissions.getLocationPermission();
 			//retrieve driver's current location
 			let {
 				coords: { latitude, longitude },
@@ -151,17 +202,10 @@ const Dashboard = props => {
 				latitude,
 				longitude,
 			});
-			//update initial marker to represent driver's current location
-			setMarkers(prevState => {
-				prevState.splice(0, 1, { id: "home", latitude, longitude });
-				console.log("updated markers", prevState);
-				return prevState;
-			});
-			//get device/fcm push notification token
-			await UserPermissions.registerPushNotificationsAsync(user);
 			//update user coordinates on database
 			await updateUserCoordinates(user, { latitude, longitude });
 		})();
+		return () => dispatch(SET_ONLINE_STATUS(isOnline));
 	}, []);
 
 	/**
@@ -171,6 +215,7 @@ const Dashboard = props => {
 		(async () => {
 			//check user status is online
 			if (isOnline) {
+				//connect app client to firebase database
 				await connect();
 				//if there is currently NO ride active
 				if (!newRide)
@@ -193,20 +238,32 @@ const Dashboard = props => {
 										if (
 											snapshot.key !== undefined &&
 											!declinedReqs.includes(snapshot.key) &&
-											snapshot.val().tripAccepted !== true
+											!snapshot.val().tripAccepted
 										) {
-											setMarkers(prevState => {
-												let coords = snapshot.val().pickupCoordinate;
-												prevState.push({
-													id: "pickup",
-													latitude: coords[0],
-													longitude: coords[1],
-												});
-												console.log("updated markers:", prevState);
-												return prevState;
-											});
-											setCurrentReqId(snapshot.key);
-											setRideDetails(snapshot.val());
+											Location.getLastKnownPositionAsync().then(
+												({ coords: { latitude, longitude } }) => {
+													//update initial marker to represent driver's current location
+													setMarkers(prevState => {
+														let [lat1, lng1] = snapshot.val().pickupCoordinate;
+														let [lat2, lng2] = snapshot.val().destinationCoordinate;
+														prevState.splice(0, 1, { id: "current", latitude, longitude });
+														prevState.splice(1, 1, {
+															id: "pickup",
+															latitude: lat1,
+															longitude: lng1,
+														});
+														prevState.splice(2, 1, {
+															id: "dropoff",
+															latitude: lat2,
+															longitude: lng2,
+														});
+														console.log("updated markers:", prevState);
+														return prevState;
+													});
+													setCurrentTripId(snapshot.key);
+													setRideDetails(snapshot.val());
+												}
+											);
 										}
 									},
 									err => Alert.alert("Error:", err.message)
@@ -220,7 +277,6 @@ const Dashboard = props => {
 				console.log("unsubscribed from ride requests");
 			}
 		})();
-		return () => dispatch(SET_ONLINE_STATUS(isOnline));
 	}, [isOnline, reset]);
 
 	return (
@@ -237,25 +293,39 @@ const Dashboard = props => {
 				}}
 				region={{ ...coords }}
 				onRegionChangeComplete={region => {
-					if (newRegion) setCoords({ ...region });
+					if (newRegion) {
+						console.log("NEW COORDS");
+						setCoords({ ...region });
+					}
 				}}
 				showsUserLocation={!(markers.length >= 1)}
 				followUserLocation={!(markers.length > 1)}
 				showsCompass={true}
-				style={[styles.mapContainer, { flex: !rideDetails ? 1 : 0.7 }]}
+				style={[styles.mapContainer, { flex: Boolean(rideDetails) ? 0.7 : 1 }]}
 			>
+				{/*TODO - customize markers for pickup and dropoff locations*/}
 				{markers.map(({ id, latitude, longitude }, index) => (
-					<Marker key={index} coordinate={{ latitude, longitude }} identifier={id}>
+					<Marker
+						key={index}
+						coordinate={{ latitude, longitude }}
+						identifier={id}
+						title={`${id} location`}
+						description={
+							index === 2
+								? dropOff.details.destPlaceName
+								: index === 1
+								? pickUp.details.sourcePlaceName
+								: null
+						}
+					>
 						{index === 0 && <Image source={IMAGES.carTop} style={{ width: 25, height: 50 }} />}
+						{index !== 0 && <Callout />}
 					</Marker>
 				))}
-				{rideDetails && (
+				{markers.length >= 2 && rideDetails && (
 					<MapViewDirections
 						origin={{ latitude: markers[0].latitude, longitude: markers[0].longitude }}
-						destination={{
-							latitude: markers[markers.length - 1].latitude,
-							longitude: markers[markers.length - 1].longitude,
-						}}
+						destination={{ latitude: markers[1].latitude, longitude: markers[1].longitude }}
 						apikey={GOOGLE_MAPS_DIRECTIONS_API_KEY}
 						strokeWidth={5}
 						strokeColor={COLOURS.PRIMARY}
@@ -265,7 +335,13 @@ const Dashboard = props => {
 						onReady={({ distance, duration }) => {
 							console.log(`Distance: ${distance} km`);
 							console.log(`Duration: ${duration} min.`);
-							dispatch(updatePickupInfo({ metrics: { distance, duration } }));
+							if (rideStatus.key === 2) {
+								dispatch(updateDropoffInfo({ metrics: { distance, duration } }));
+								if (distance < 1 && dropOff.metrics.distance < 1 && newRide) setDestModalVisible(true);
+							} else {
+								dispatch(updatePickupInfo({ metrics: { distance, duration } }));
+								if (distance < 1 && pickUp.metrics.distance < 1 && newRide) setSourceModalVisible(true);
+							}
 							setMetrics({ distance, duration });
 							setNewRequest(true);
 						}}
@@ -273,20 +349,31 @@ const Dashboard = props => {
 					/>
 				)}
 			</MapView>
+			<PickupModal
+				id={currentTripId}
+				showModal={isSourceVisible}
+				address={pickUp.details ? pickUp.details["sourcePlaceName"] : ""}
+				cancelTrip={reset}
+				confirmPickup={confirm}
+			/>
+			<DropoffModal
+				id={currentTripId}
+				showModal={isDestVisible}
+				placeName={dropOff.details ? dropOff.details["destPlaceName"] : ""}
+				completeTrip={complete}
+			/>
 			{isOnline && newRequest ? (
 				newRide ? (
-					<PickUp
-						tripId={currentReqId}
-						details={rideDetails}
+					<NewRide
+						tripId={currentTripId}
 						onCancel={reset}
 						markers={markers}
 						updateMarkers={updateMarkers}
-						metrics={travelMetrics}
 						ref={mapViewRef}
 					/>
 				) : (
 					<NewRequest
-						reqId={currentReqId}
+						reqId={currentTripId}
 						details={rideDetails}
 						onDecline={reset}
 						onAccept={acceptRequest}
@@ -329,7 +416,10 @@ const Dashboard = props => {
 					</Block>
 					<TouchableOpacity
 						activeOpacity={0.7}
-						onPress={() => setOnlineStatus(!isOnline)}
+						onPress={() => {
+							dispatch(SET_ONLINE_STATUS(!isOnline));
+							setOnlineStatus(!isOnline)
+						}}
 						style={[
 							styles.onlineBtn,
 							{

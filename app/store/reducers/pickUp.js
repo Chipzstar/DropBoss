@@ -1,7 +1,6 @@
 import { CREATE_PICKUP, UPDATE_PICKUP, REMOVE_PICKUP } from "../actionTypes";
 
 const initialState = {
-	tripId: "",
 	details: false,
 	riderInfo: {
 		riderName: "",
@@ -9,8 +8,8 @@ const initialState = {
 	},
 	markers: [],
 	metrics: {
-		distance: 0,
-		duration: 0
+		distance: null,
+		duration: null
 	}
 }
 
