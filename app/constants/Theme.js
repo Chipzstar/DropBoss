@@ -1,5 +1,6 @@
 export const COLOURS = {
 	PRIMARY: "#FB8B23",
+	SECONDARY: "#2393FB",
 	DISABLED: "#888888",
 	ONLINE_OFF: "#6B7377",
 	ONLINE_ON: "#90ce6c",

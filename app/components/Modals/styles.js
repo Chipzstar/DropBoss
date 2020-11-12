@@ -17,15 +17,20 @@ export default (styles = StyleSheet.create({
 		justifyContent: "space-around",
 		alignItems: "center",
 		height: HEIGHT * 0.55,
-		width: WIDTH * 0.8,
+		width: WIDTH * 0.85,
 		backgroundColor: COLOURS.WHITE,
 	},
 	reportContainer: {
 		flex: 0.8,
-		width: WIDTH * 0.65
+		width: WIDTH * 0.7
 	},
 	journeyContainer: {
 		flex: 1,
 		justifyContent: "space-around"
+	},
+	row: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center"
 	}
 }));

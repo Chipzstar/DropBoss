@@ -12,6 +12,11 @@ export const REMOVE_PICKUP = "REMOVE_PICKUP";
 export const CREATE_DROPOFF = "CREATE_DROPOFF";
 export const UPDATE_DROPOFF = "UPDATE_DROPOFF";
 export const REMOVE_DROPOFF = "REMOVE_DROPOFF";
+//invoice actions
+export const CREATE_INVOICE = "CREATE_INVOICE";
+export const UPDATE_INVOICE=  "UPDATE_INVOICE";
+export const REMOVE_INVOICE = "REMOVE_INVOICE";
+
 //online status
 export const ONLINE = 'ONLINE';
 //ride status

@@ -4,6 +4,7 @@ import { combineReducers } from "redux";
 //reducers
 import pickUpReducer from "./pickUp";
 import dropOffReducer from "./dropOff";
+import invoiceReducer from "./invoice";
 //actionTypes
 import { CLEAR, ONLINE, RESET, RIDE_STATUS } from "../actionTypes";
 
@@ -45,6 +46,7 @@ const appReducer = combineReducers({
 	},
 	pickUp: pickUpReducer,
 	dropOff: dropOffReducer,
+	rideInvoice: invoiceReducer,
 });
 
 const rootReducer = (state, action) => {

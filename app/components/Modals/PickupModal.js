@@ -1,15 +1,14 @@
 import React from "react";
 import PropTypes from "prop-types";
 import Modal from "react-native-modal";
-import { Text, Button, Block } from "galio-framework";
-import { WIDTH, HEIGHT } from "../Ride/styles";
+import { Block, Button, Text } from "galio-framework";
+import { HEIGHT, WIDTH } from "../Ride/styles";
 import { useDispatch, useSelector } from "react-redux";
-import { RIDE_STATUS } from "../../store/actionTypes";
 import { COLOURS } from "../../constants/Theme";
 
-const PickupModal = ({ address, showModal, id, cancelTrip, confirmPickup }) => {
+const PickupModal = ({ placeName, showModal, id, cancelTrip, confirm }) => {
 	const dispatch = useDispatch();
-	const { details } = useSelector(state => state.dropOff)
+	const { details: { coords } } = useSelector(state => state["dropOff"]);
 	return (
 		<Modal isVisible={showModal} style={{ alignItems: "center" }}>
 			<Block
@@ -28,7 +27,7 @@ const PickupModal = ({ address, showModal, id, cancelTrip, confirmPickup }) => {
 						Confirm pickup
 					</Text>
 					<Text h4 center color={COLOURS.HEADING}>
-						@ {address}
+						@ {placeName}
 					</Text>
 				</Block>
 				<Block style={{flexDirection: "row"}}>
@@ -36,7 +35,7 @@ const PickupModal = ({ address, showModal, id, cancelTrip, confirmPickup }) => {
 						style={{ height: 50, width: WIDTH * 0.3, borderRadius: 10 }}
 						color={COLOURS.PRIMARY}
 						uppercase
-						onPress={() => confirmPickup(details.coords)}
+						onPress={() => confirm(coords)}
 					>
 						<Text color={COLOURS.WHITE} h5>
 							Confirm
@@ -62,10 +61,10 @@ const PickupModal = ({ address, showModal, id, cancelTrip, confirmPickup }) => {
 };
 
 PickupModal.propTypes = {
-	address: PropTypes.string.isRequired,
+	placeName: PropTypes.string.isRequired,
 	showModal: PropTypes.bool.isRequired,
 	cancelTrip: PropTypes.func.isRequired,
-	confirmPickup: PropTypes.func.isRequired,
+	confirm: PropTypes.func.isRequired,
 };
 
 export default PickupModal;

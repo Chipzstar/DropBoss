@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Image, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import * as Location from "expo-location";
 import PropTypes from "prop-types";
 import { Block, Button, Input, Text } from "galio-framework";
@@ -17,6 +17,13 @@ import { useDispatch, useSelector } from "react-redux";
 import EdgePadding from "../../helpers/EdgePadding";
 import { updatePickupInfo } from "../../store/actions/pickUp";
 import { updateDropoffInfo } from "../../store/actions/dropOff";
+//firebase
+import firebase from '@react-native-firebase/app';
+import '@react-native-firebase/messaging';
+
+function sendMessage(payload) {
+	console.log("Sending message:", payload);
+}
 
 const NewRide = React.memo(
 	React.forwardRef((props, ref) => {
@@ -47,9 +54,9 @@ const NewRide = React.memo(
 			}, 20 * 1000);
 			return () => {
 				key === 2
-					? dispatch(updateDropoffInfo({ markers }))
+					? dispatch(updateDropoffInfo({ markers: markers.slice(0, 2) }))
 					: key === 1
-					? dispatch(updatePickupInfo({ markers }))
+					? dispatch(updatePickupInfo({ markers: markers.slice(0, 2) }))
 					: null;
 				clearInterval(interval);
 			};
@@ -118,11 +125,7 @@ const NewRide = React.memo(
 								)} km`}
 							</Text>
 						</Block>
-						<Block
-							style={{
-								flex: 0.6,
-							}}
-						>
+						<Block style={{ flex: 0.6 }}>
 							<Text style={styles.subText}>{dropOff.details.arrivalTime}</Text>
 							<Text style={styles.subText}>{dropOff.details["destAddress"]}</Text>
 							<Text style={styles.subText}>dropping off {dropOff.riderInfo.riderName}</Text>
@@ -157,12 +160,15 @@ const NewRide = React.memo(
 					<Block style={styles.contactContainer}>
 						<Input
 							bgColor={COLOURS.MSG_FIELD}
-							style={{ height: HEIGHT * 0.075, width: WIDTH * 0.7 }}
+							style={{ height: HEIGHT * 0.075, width: WIDTH * 0.75 }}
 							placeholder='send a message...'
 							value={message}
 							onChangeText={text => setMessage(text)}
+							onSubmitEditing={({ nativeEvent: {text} }) => sendMessage(text)}
 						/>
-						<Image source={call} style={styles.callIcon} />
+						<TouchableOpacity activeOpacity={0.5} onPress={() => sendMessage(message)}>
+							<DashIcons name={"send"} size={30} />
+						</TouchableOpacity>
 					</Block>
 				</Block>
 			</View>

@@ -1,96 +1,65 @@
 import React from "react";
-import { useDispatch } from "react-redux";
+import PropTypes from 'prop-types';
 import Modal from "react-native-modal";
 import { Block, Button, Text } from "galio-framework";
 import { HEIGHT, WIDTH } from "../Ride/styles";
 import { COLOURS } from "../../constants/Theme";
-import PropTypes from 'prop-types'
-import styles from './styles';
 
-const DropoffModal = ({ placeName, showModal, id, completeTrip }) => {
-	const dispatch = useDispatch();
+const DropoffModal = ({ id, showModal, placeName, defer, confirm }) => {
 	return (
 		<Modal isVisible={showModal} style={{ alignItems: "center" }}>
-			<Block style={styles.modalContainer}>
+			<Block
+				style={{
+					borderRadius: 30,
+					elevation: 5,
+					justifyContent: "space-around",
+					alignItems: "center",
+					height: HEIGHT * 0.5,
+					width: WIDTH * 0.8,
+					backgroundColor: COLOURS.WHITE,
+				}}
+			>
 				<Block>
-					<Text h2 center color={COLOURS.HEADING} style={{ fontFamily: "Lato-Bold" }}>
-						we've arrived!
+					<Text h3 center color={COLOURS.TEXT} bold>
+						Confirm Dropoff
+					</Text>
+					<Text h4 center color={COLOURS.HEADING}>
+						@ {placeName}
 					</Text>
 				</Block>
-				<Block style={styles.reportContainer}>
-					<Block>
-						<Block style={{ flexDirection: "row", justifyContent: "space-between" }}>
-							<Text h3 color={COLOURS.HEADING} style={{ fontFamily: "Lato-Light" }}>
-								fare:
-							</Text>
-							<Text h3 bold color={COLOURS.HEADING} style={styles.reportText}>
-								£10.17
-							</Text>
-						</Block>
-						<Block style={{ flexDirection: "row", justifyContent: "space-between" }}>
-							<Text h3 color={COLOURS.HEADING} style={{ fontFamily: "Lato-Light" }}>
-								distance:
-							</Text>
-							<Text h3 bold color={COLOURS.HEADING} style={styles.reportText}>
-								6.7 mi
-							</Text>
-						</Block>
-						<Block style={{ flexDirection: "row", justifyContent: "space-between" }}>
-							<Text h3 color={COLOURS.HEADING} style={{ fontFamily: "Lato-Light" }}>
-								duration:
-							</Text>
-							<Text h3 bold color={COLOURS.HEADING} style={styles.reportText}>
-								15 min
-							</Text>
-						</Block>
-					</Block>
-
-					<Block style={styles.journeyContainer}>
-						<Block style={{ flexDirection: "row", justifyContent: "space-between"}}>
-							<Text h6 muted style={styles.reportText}>depart time:</Text>
-							<Text h6 color={COLOURS.HEADING} style={styles.reportText}>10:28</Text>
-						</Block>
-						<Block style={{ flexDirection: "row", justifyContent: "space-between"  }}>
-							<Text h6 muted style={styles.reportText}>arrival time:</Text>
-							<Text h6 color={COLOURS.HEADING} style={styles.reportText}>10:43</Text>
-						</Block>
-						<Block style={{ flexDirection: "row", justifyContent: "space-between"  }}>
-							<Text h6 muted style={styles.reportText}>drop off:</Text>
-							<Text h6 color={COLOURS.HEADING} style={styles.reportText}>{placeName}</Text>
-						</Block>
-						<Block style={{ flexDirection: "row", justifyContent: "space-between"  }}>
-							<Text h6 muted style={styles.reportText}>rider:</Text>
-							<Text h6 bold color={COLOURS.HEADING} style={styles.reportText}>@chipzstar</Text>
-						</Block>
-					</Block>
-				</Block>
-
-				<Block style={{ flexDirection: "row" }}>
+				<Block style={{flexDirection: "row"}}>
 					<Button
-						style={{ height: 50, width: WIDTH * 0.7, borderRadius: 10 }}
+						style={{ height: 50, width: WIDTH * 0.3, borderRadius: 10 }}
 						color={COLOURS.PRIMARY}
 						lowercase
-						onPress={() => {
-							console.log("Trip completed");
-							completeTrip(id)
-						}}
+						onPress={() => confirm(id)}
 					>
 						<Text color={COLOURS.WHITE} h5>
-							continue
+							Yes
+						</Text>
+					</Button>
+					<Button
+						style={{ height: 50, width: WIDTH * 0.3, borderRadius: 10 }}
+						color={COLOURS.SECONDARY}
+						lowercase
+						onPress={defer}
+					>
+						<Text color={COLOURS.WHITE} h5>
+							Not yet
 						</Text>
 					</Button>
 				</Block>
 			</Block>
 		</Modal>
 	);
-};
+}
 
 DropoffModal.propTypes = {
 	id: PropTypes.string.isRequired,
 	showModal: PropTypes.bool.isRequired,
 	placeName: PropTypes.string.isRequired,
-	completeTrip: PropTypes.func.isRequired
+	defer: PropTypes.func.isRequired,
+	confirm: PropTypes.func.isRequired
 }
-
 
 export default DropoffModal;

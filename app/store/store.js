@@ -9,8 +9,8 @@ import thunk from "redux-thunk";
 const persistConfig = {
 	key: "root",
 	storage: AsyncStorage,
-	whitelist: ['onlineStatus', 'pickUp', 'dropOff', "rideStatus"],
-	//blacklist: ['onlineStatus', 'pickUp', 'dropOff', 'rideStatus']
+	whitelist: ['onlineStatus', 'pickUp', 'dropOff', 'rideStatus', 'rideInvoice']
+	//blacklist: ['onlineStatus', 'pickUp', 'dropOff', 'rideStatus', 'rideInvoice']
 };
 
 //Middleware: Redux Persist Persisted Reducer

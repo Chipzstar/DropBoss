@@ -7,6 +7,7 @@ import MapView, { Callout, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { Block, Text } from "galio-framework";
 import * as Location from "expo-location";
+import moment from "moment";
 //firebase
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
@@ -28,14 +29,32 @@ import { updateDropoffInfo } from "../../store/actions/dropOff";
 import { CLEAR_RIDE_STATUS, SET_ONLINE_STATUS } from "../../store/reducers";
 import { REMOVE_DROPOFF, REMOVE_PICKUP, RIDE_STATUS } from "../../store/actionTypes";
 import DropoffModal from "../../components/Modals/DropoffModal";
+import { updateInvoice } from "../../store/actions/invoice";
+import InvoiceModal from "../../components/Modals/InvoiceModal";
 
 const Dashboard = props => {
 	//redux
-	const { pickUp, rideStatus, dropOff, onlineStatus } = useSelector(state =>  state);
+	const { pickUp, rideStatus, dropOff, onlineStatus, rideInvoice } = useSelector(state => state);
 	const dispatch = useDispatch();
 
 	const [isOnline, setOnlineStatus] = useState(onlineStatus);
-	const [coords, setCoords] = useState({ latitude: 0, longitude: 0, latitudeDelta: 0.005, longitudeDelta: 0.005 });
+	const [coords, setCoords] = useState(
+		rideStatus.key === 2
+			? {
+					latitude: dropOff.markers[0].latitude,
+					longitude: dropOff.markers[0].longitude,
+					latitudeDelta: 0.005,
+					longitudeDelta: 0.005,
+			  }
+			: rideStatus.key === 1
+			? {
+					latitude: pickUp.markers[0].latitude,
+					longitude: pickUp.markers[0].longitude,
+					latitudeDelta: 0.005,
+					longitudeDelta: 0.005,
+			  }
+			: { latitude: 0, longitude: 0, latitudeDelta: 0.005, longitudeDelta: 0.005 }
+	);
 	const [markers, setMarkers] = useState(rideStatus.key === 2 ? dropOff.markers : pickUp.markers);
 	const [currentTripId, setCurrentTripId] = useState(rideStatus.tripId);
 	const [incomingReqs, updateIncoming] = useState([]);
@@ -46,6 +65,7 @@ const Dashboard = props => {
 	const [travelMetrics, setMetrics] = useState({ distance: 0, duration: 0 });
 	const [isSourceVisible, setSourceModalVisible] = useState(false);
 	const [isDestVisible, setDestModalVisible] = useState(false);
+	const [showInvoice, setShowInvoice] = useState(rideStatus.key === 3);
 
 	//CONSTANTS & REFS
 	const { user } = useContext(AuthContext);
@@ -101,6 +121,7 @@ const Dashboard = props => {
 							})
 						);
 						dispatch({ type: RIDE_STATUS.ON_PICKUP, id: tripId });
+						dispatch(updateInvoice({ rider: firstname }));
 						setNewRide(true);
 					}
 				)
@@ -111,7 +132,7 @@ const Dashboard = props => {
 
 	const reset = useCallback(
 		(reqId, type) => {
-			setSourceModalVisible(false);
+			setCurrentTripId("");
 			setNewRequest(false);
 			setRideDetails(false);
 			updateIncoming(prevState => {
@@ -119,28 +140,29 @@ const Dashboard = props => {
 				return prevState;
 			});
 			setMarkers(prevState => []); //clear the contents of markers
-			updateDeclined(prevState => {
-				prevState.push(reqId);
-				return [...prevState];
-			});
 			dispatch({ type: REMOVE_PICKUP });
-			if (type === "CANCEL") {
-				console.log("CANCELLED");
+			if (type.toUpperCase() === "CANCEL" || type.toUpperCase() === "COMPLETE") {
+				console.log(type === "CANCEL" ? "CANCELLED" : "COMPLETED");
 				dispatch(CLEAR_RIDE_STATUS);
 				dispatch({ type: REMOVE_DROPOFF });
 				setNewRide(false);
 			} else {
 				console.log("DECLINED");
+				updateDeclined(prevState => {
+					prevState.push(reqId);
+					return [...prevState];
+				});
 			}
 			return null;
 		},
-		[declinedReqs]
+		[incomingReqs]
 	);
 
-	const confirm = useCallback(
-		({ latitude, longitude }) => {
+	const pickUpComplete = useCallback(
+		([latitude, longitude]) => {
 			setSourceModalVisible(false);
 			dispatch({ type: RIDE_STATUS.ON_DROPOFF, id: currentTripId });
+			dispatch(updateInvoice({ departTime: moment().format("HH:mm") }));
 			updateRegion();
 			setMarkers(prevState => {
 				prevState.splice(1, 1, {
@@ -155,9 +177,17 @@ const Dashboard = props => {
 		[currentTripId]
 	);
 
-	const complete = useCallback((tripId) => {
+	const dropOffComplete = useCallback(tripId => {
+		setDestModalVisible(false);
 		dispatch({ type: RIDE_STATUS.ON_COMPLETE, id: tripId });
-	}, [])
+		dispatch(updateInvoice({ arrivalTime: moment().format("HH:mm") }));
+		setShowInvoice(true);
+	}, []);
+
+	const tripComplete = useCallback(() => {
+		setShowInvoice(false);
+		reset(null, "complete");
+	}, []);
 
 	const updateMarkers = useCallback(
 		({ latitude, longitude }) => {
@@ -177,12 +207,12 @@ const Dashboard = props => {
 	/**
 	 * Re-render checker
 	 */
-	useEffect(() => {
-		//console.log("coords:", coords);
-	});
+	/*useEffect(() => {
+		console.log("CURRENT MARKERS:", markers);
+	});*/
 	/**
-	 * CONSTRUCTOR - used to get drivers current locations, and register device for
-	 *  push notifications. WILL ONLY RUN ONCE!
+	 * CONSTRUCTOR - used to get drivers current locations, and update it in the database
+	 * WILL ONLY RUN ONCE!
 	 */
 	useEffect(() => {
 		console.log("New ride:", newRide);
@@ -311,9 +341,9 @@ const Dashboard = props => {
 						identifier={id}
 						title={`${id} location`}
 						description={
-							index === 2
+							id === "dropoff"
 								? dropOff.details.destPlaceName
-								: index === 1
+								: id === "pickup"
 								? pickUp.details.sourcePlaceName
 								: null
 						}
@@ -337,6 +367,12 @@ const Dashboard = props => {
 							console.log(`Duration: ${duration} min.`);
 							if (rideStatus.key === 2) {
 								dispatch(updateDropoffInfo({ metrics: { distance, duration } }));
+								dispatch(
+									updateInvoice({
+										distance: Math.max(distance, rideInvoice.distance),
+										duration: Math.max(duration, rideInvoice.duration),
+									})
+								);
 								if (distance < 1 && dropOff.metrics.distance < 1 && newRide) setDestModalVisible(true);
 							} else {
 								dispatch(updatePickupInfo({ metrics: { distance, duration } }));
@@ -352,15 +388,22 @@ const Dashboard = props => {
 			<PickupModal
 				id={currentTripId}
 				showModal={isSourceVisible}
-				address={pickUp.details ? pickUp.details["sourcePlaceName"] : ""}
+				placeName={pickUp.details ? pickUp.details["sourcePlaceName"] : ""}
 				cancelTrip={reset}
-				confirmPickup={confirm}
+				confirm={pickUpComplete}
 			/>
 			<DropoffModal
 				id={currentTripId}
 				showModal={isDestVisible}
 				placeName={dropOff.details ? dropOff.details["destPlaceName"] : ""}
-				completeTrip={complete}
+				defer={() => setDestModalVisible(false)}
+				confirm={dropOffComplete}
+			/>
+			<InvoiceModal
+				id={currentTripId}
+				showModal={showInvoice}
+				placeName={dropOff.details ? dropOff.details["destPlaceName"] : ""}
+				completeTrip={tripComplete}
 			/>
 			{isOnline && newRequest ? (
 				newRide ? (
@@ -418,7 +461,7 @@ const Dashboard = props => {
 						activeOpacity={0.7}
 						onPress={() => {
 							dispatch(SET_ONLINE_STATUS(!isOnline));
-							setOnlineStatus(!isOnline)
+							setOnlineStatus(!isOnline);
 						}}
 						style={[
 							styles.onlineBtn,
