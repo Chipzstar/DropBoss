@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { ToastAndroid, TouchableOpacity, View } from "react-native";
 import * as Location from "expo-location";
 import PropTypes from "prop-types";
 import { Block, Button, Input, Text } from "galio-framework";
@@ -18,12 +18,8 @@ import EdgePadding from "../../helpers/EdgePadding";
 import { updatePickupInfo } from "../../store/actions/pickUp";
 import { updateDropoffInfo } from "../../store/actions/dropOff";
 //firebase
-import firebase from '@react-native-firebase/app';
-import '@react-native-firebase/messaging';
-
-function sendMessage(payload) {
-	console.log("Sending message:", payload);
-}
+import iid from "@react-native-firebase/iid";
+import axios from "axios";
 
 const NewRide = React.memo(
 	React.forwardRef((props, ref) => {
@@ -74,7 +70,6 @@ const NewRide = React.memo(
 		}, [markers]);
 
 		useEffect(() => {
-			//console.count("pickup metrics change");
 			(async () => {
 				let arrivalTime = await updateArrivalTime(user, tripId, pickUp.metrics.duration);
 				if (key === 1)
@@ -90,7 +85,6 @@ const NewRide = React.memo(
 		}, [pickUp.metrics]);
 
 		useEffect(() => {
-			//console.count("dropoff metrics change");
 			(async () => {
 				let arrivalTime = await updateArrivalTime(user, tripId, dropOff.metrics.duration);
 				if (key === 2)
@@ -104,6 +98,37 @@ const NewRide = React.memo(
 					);
 			})();
 		}, [dropOff.metrics]);
+
+		async function sendMessage() {
+			console.log("MESSAGE:", message);
+			const url = "https://europe-west2-ridesdash-13b8a.cloudfunctions.net/sendPickupMessage";
+			const id = await iid().get();
+			console.log("ID", id);
+			try {
+				await axios.post(
+					url,
+					{ data: { message, riderId: pickUp.riderInfo.id, driverId: user.uid} },
+					{
+						headers: {
+							"Content-Type": "application/json; charset=utf-8"
+						},
+					}
+				);
+				ToastAndroid.showWithGravityAndOffset(
+					"Message Sent",
+					ToastAndroid.LONG,
+					ToastAndroid.BOTTOM,
+					0,
+					100
+				);
+			} catch (e) {
+				console.log({ Error: e });
+			}
+			/*firebase
+				.functions().on("sendMessage")({ payload })
+				.then(res => console.log(res))
+				.catch(err => console.error(err));*/
+		}
 
 		const dropoffView = (
 			<View style={styles.dropOffContainer}>
@@ -164,9 +189,9 @@ const NewRide = React.memo(
 							placeholder='send a message...'
 							value={message}
 							onChangeText={text => setMessage(text)}
-							onSubmitEditing={({ nativeEvent: {text} }) => sendMessage(text)}
+							onSubmitEditing={() => sendMessage()}
 						/>
-						<TouchableOpacity activeOpacity={0.5} onPress={() => sendMessage(message)}>
+						<TouchableOpacity activeOpacity={0.5} onPress={() => sendMessage()}>
 							<DashIcons name={"send"} size={30} />
 						</TouchableOpacity>
 					</Block>

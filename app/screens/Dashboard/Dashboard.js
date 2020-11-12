@@ -80,6 +80,7 @@ const Dashboard = props => {
 			markRideAccepted(`trips/${tripId}`, user.uid)
 				.then(
 					({
+						riderKey,
 						pickupCoordinate,
 						destinationCoordinate,
 						sourcePlaceName,
@@ -101,7 +102,7 @@ const Dashboard = props => {
 								},
 								riderInfo: {
 									riderName: firstname,
-									rating: 0,
+									id: riderKey,
 								},
 								markers: markers.filter(mkr => mkr.id !== "dropoff"),
 							})
@@ -115,7 +116,7 @@ const Dashboard = props => {
 								},
 								riderInfo: {
 									riderName: firstname,
-									rating: 0,
+									id: riderKey,
 								},
 								markers: markers.filter(mkr => mkr.id !== "pickup"),
 							})

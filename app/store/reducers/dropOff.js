@@ -4,7 +4,7 @@ const initialState = {
 	details: false,
 	riderInfo: {
 		riderName: "",
-		rating: 0.0
+		id: ""
 	},
 	markers: [],
 	metrics: {

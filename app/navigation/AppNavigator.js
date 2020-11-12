@@ -58,7 +58,7 @@ const AppNavigator = props => {
 			await UserPermissions.getLocationPermission();
 			//get device/fcm push notification token
 			await UserPermissions.registerPushNotificationsAsync(user);
-			setUserToken(user ? user.uid : null);
+			setUserToken(user ? user : null);
 			setInitializing(false);
 		} else {
 			try {

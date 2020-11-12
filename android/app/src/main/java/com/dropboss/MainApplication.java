@@ -22,6 +22,7 @@ import expo.modules.constants.ConstantsPackage;
 import expo.modules.permissions.PermissionsPackage;
 import expo.modules.filesystem.FileSystemPackage;
 import expo.modules.updates.UpdatesController;
+import io.invertase.firebase.functions.ReactNativeFirebaseFunctionsPackage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -44,6 +45,7 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
     protected List<ReactPackage> getPackages() {
       List<ReactPackage> packages = new PackageList(this).getPackages();
       packages.add(new ModuleRegistryAdapter(mModuleRegistryProvider));
+      packages.add(new ReactNativeFirebaseFunctionsPackage());
       return packages;
     }
 
