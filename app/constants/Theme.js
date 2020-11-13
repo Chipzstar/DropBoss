@@ -8,7 +8,8 @@ export const COLOURS = {
 	BLACK: "#000",
 	TEXT: "#4B545A",
 	HEADING: "#3E4958",
-	MSG_FIELD: "rgba(213, 221, 224, 0.2)"
+	MSG_FIELD: "rgba(213, 221, 224, 0.2)",
+	ERROR: "#F5365C"
 }
 
 export const IMAGES = {

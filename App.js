@@ -32,7 +32,7 @@ class App extends React.Component {
 	render() {
 		const { loading } = this.state;
 		if (loading) {
-			return <AppLoading />;
+			return null
 		}
 		return (
 			<Provider store={store}>

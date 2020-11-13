@@ -12,8 +12,34 @@ import "@react-native-firebase/messaging";
 import { useDispatch } from "react-redux";
 import { RESET_ACTION } from "../store/reducers";
 import UserPermissions from "../permissions/UserPermissions";
+import Login from "../screens/Auth/Login";
+import ForgotPassword from "../screens/Auth/ForgotPassword";
+import { Alert } from "react-native";
 
+const RootStack = createStackNavigator();
 const MainStack = createStackNavigator();
+const AuthStack = createStackNavigator();
+
+const RootStackScreen = ({ userToken }) => (
+	<RootStack.Navigator headerMode={'none'}>
+		{userToken ? (
+			<RootStack.Screen name={'App'} component={MainStackScreen}/>
+		) : (
+			<RootStack.Screen name={'Auth'}>
+				{props => <AuthStackScreen {...props} />}
+			</RootStack.Screen>
+		)}
+	</RootStack.Navigator>
+);
+
+const AuthStackScreen = () => {
+	return (
+		<AuthStack.Navigator headerMode={'none'} initialRouteName={"SignIn"}>
+			<AuthStack.Screen name={'SignIn'} component={Login} />
+			<AuthStack.Screen name={'ForgotPassword'} component={ForgotPassword} />
+		</AuthStack.Navigator>
+	)
+};
 
 const MainStackScreen = () => (
 	<MainStack.Navigator headerMode={"none"}>
@@ -25,6 +51,8 @@ const MainStackScreen = () => (
 	</MainStack.Navigator>
 );
 
+let unsubscribeAuth;
+
 const AppNavigator = props => {
 	const dispatch = useDispatch();
 	const [initializing, setInitializing] = useState(true);
@@ -32,6 +60,48 @@ const AppNavigator = props => {
 
 	const authContext = useMemo(
 		() => ({
+			signIn: ({ email, password }) => {
+				unsubscribeAuth();
+				firebase
+					.auth()
+					.signInWithEmailAndPassword(email.toLowerCase().trim(), password)
+					.then(({ user }) => {
+						setInitializing(false);
+						setUserToken(user.uid);
+					})
+					.catch(error => {
+						switch (error.code) {
+							case 'auth/invalid-email':
+								Alert.alert('That email address is invalid');
+								return;
+							case 'auth/user-disabled':
+								Alert.alert('The account with that email address has been disabled');
+								return;
+							case 'auth/wrong-password':
+								Alert.alert('Wrong password');
+								return;
+							case 'auth/user-not-found':
+								Alert.alert('No user exists with that email address');
+								return;
+							default:
+								Alert.alert('Oops!', error.message);
+								console.log(error);
+						}
+					});
+			},
+			signOut: () => {
+				firebase
+					.auth()
+					.signOut()
+					.then(function () {
+						console.log('signed out');
+						setInitializing(false);
+						setUserToken(null);
+					})
+					.catch(function (error) {
+						console.error(error);
+					});
+			},
 			user: userToken ? firebase.auth().currentUser : null,
 		}),
 		[userToken]
@@ -45,7 +115,7 @@ const AppNavigator = props => {
 			);
 		});*/
 		//dispatch(RESET_ACTION);
-		const unsubscribeAuth = firebase
+		unsubscribeAuth = firebase
 			.auth()
 			.onAuthStateChanged(onAuthStateChanged);
 		return unsubscribeAuth();
@@ -53,14 +123,16 @@ const AppNavigator = props => {
 
 	async function onAuthStateChanged(user) {
 		if (user) {
+			console.log('onAuthStateChanged', user ? user.uid : user);
 			console.log("signed in");
 			//get location permissions
 			await UserPermissions.getLocationPermission();
 			//get device/fcm push notification token
 			await UserPermissions.registerPushNotificationsAsync(user);
-			setUserToken(user ? user : null);
-			setInitializing(false);
-		} else {
+			setUserToken(user ? user.uid : user);
+		}
+		setInitializing(false);
+		/* else {
 			try {
 				await firebase
 					.auth()
@@ -72,12 +144,12 @@ const AppNavigator = props => {
 			} catch (error) {
 				console.error(error.code, error.message);
 			}
-		}
+		}*/
 	}
 
-	return !initializing && userToken ? (
+	return !initializing ? (
 		<AuthProvider value={authContext}>
-			<MainStackScreen />
+			<RootStackScreen userToken={userToken}/>
 		</AuthProvider>
 	) : <AppLoading/>;
 };
