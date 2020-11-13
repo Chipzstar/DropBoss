@@ -55,7 +55,6 @@ const DropoffModal = ({ id, showModal, placeName, defer, confirm }) => {
 }
 
 DropoffModal.propTypes = {
-	id: PropTypes.string.isRequired,
 	showModal: PropTypes.bool.isRequired,
 	placeName: PropTypes.string.isRequired,
 	defer: PropTypes.func.isRequired,
