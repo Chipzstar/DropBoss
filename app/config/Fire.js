@@ -1,6 +1,7 @@
 import moment from "moment";
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
+import "@react-native-firebase/storage";
 import "@react-native-firebase/messaging";
 
 const topic = "ride_requests";
@@ -29,6 +30,20 @@ export const connect = async () => {
 	} catch (err) {
 		throw err;
 	}
+};
+
+export const getDriverDetails = (id) => {
+	return new Promise(async (resolve, reject) => {
+		try {
+			if(id){
+				let {firstname, surname, tel } = (await firebase.database().ref(`drivers/${id}`).once("value")).val()
+				console.log(firstname, surname, tel);
+				resolve({firstname, surname, tel})
+			}
+		} catch (e) {
+			reject(e)
+		}
+	})
 };
 
 export const updateUserFcmToken = (driver, fcmToken) => {
@@ -127,3 +142,23 @@ export const updateArrivalTime = async (user, tripId, duration) => {
 		}
 	});
 };
+
+export const uploadPhotoAsync = async (uri, filepath) => {
+	return new Promise(async (resolve, reject) => {
+		const res = await fetch(uri);
+		const file = await res.blob();
+		let upload = firebase.storage().ref(filepath).put(file);
+		upload.on(
+			'state_changed',
+			snapshot => {},
+			err => {
+				reject(err);
+			},
+			async () => {
+				const url = await upload.snapshot.ref.getDownloadURL();
+				resolve({ downloadURL: url });
+			}
+		);
+	});
+};
+

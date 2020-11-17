@@ -1,27 +1,35 @@
-import React from 'react';
-import AsyncStorage from '@react-native-community/async-storage';
+import React from "react";
+import AsyncStorage from "@react-native-community/async-storage";
 import { combineReducers } from "redux";
 //reducers
 import pickUpReducer from "./pickUp";
 import dropOffReducer from "./dropOff";
 import invoiceReducer from "./invoice";
 //actionTypes
-import { CLEAR, ONLINE, RESET, RIDE_STATUS } from "../actionTypes";
+import { CLEAR, NEW_DRIVER, ONLINE, RESET, RIDE_STATUS } from "../actionTypes";
 
 export const RESET_ACTION = {
-	type: RESET
+	type: RESET,
 };
 
 export const SET_ONLINE_STATUS = status => ({
 	type: ONLINE,
-	status
-})
+	status,
+});
 
-export const CLEAR_RIDE_STATUS = ({
-	type: CLEAR
-})
+export const CLEAR_RIDE_STATUS = {
+	type: CLEAR,
+};
 
 const appReducer = combineReducers({
+	driver: (state = {}, action) => {
+		switch (action.type) {
+			case NEW_DRIVER:
+				return action.data
+			default:
+				return state;
+		}
+	},
 	onlineStatus: (state = false, action) => {
 		switch (action.type) {
 			case ONLINE:
@@ -30,7 +38,7 @@ const appReducer = combineReducers({
 				return state;
 		}
 	},
-	rideStatus: (state={key: 0, tripId: null }, action) => {
+	rideStatus: (state = { key: 0, tripId: null }, action) => {
 		switch (action.type) {
 			case RIDE_STATUS.ON_PICKUP:
 				return { key: 1, tripId: action.id };
@@ -53,7 +61,7 @@ const rootReducer = (state, action) => {
 	if (action.type === RESET) {
 		// for all keys defined in your persistConfig(s)
 		console.log("Redux Storage has been reset");
-		AsyncStorage.removeItem('persist:root')
+		AsyncStorage.removeItem("persist:root");
 		state = undefined;
 	}
 	return appReducer(state, action);

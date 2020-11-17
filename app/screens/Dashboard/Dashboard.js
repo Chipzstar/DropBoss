@@ -8,6 +8,7 @@ import MapViewDirections from "react-native-maps-directions";
 import { Block, Text } from "galio-framework";
 import * as Location from "expo-location";
 import moment from "moment";
+import defaultUser from '../../assets/images/user.png';
 //firebase
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
@@ -71,6 +72,7 @@ const Dashboard = props => {
 	const { user } = useContext(AuthContext);
 	const requestRef = firebase.database().ref("trips");
 	const mapViewRef = useRef(null);
+	const photoURL = user ? user.photoURL : null;
 
 	//VARIABLES
 	let newRegion = false;
@@ -216,7 +218,7 @@ const Dashboard = props => {
 	 * WILL ONLY RUN ONCE!
 	 */
 	useEffect(() => {
-		console.log("New ride:", newRide);
+		console.log("current user", user);
 		(async () => {
 			//retrieve driver's current location
 			let {
@@ -449,8 +451,9 @@ const Dashboard = props => {
 							onPress={() => props.navigation.navigate("Profile")}
 						>
 							<Image
-								source={oscar}
+								source={photoURL ? {uri: photoURL} : defaultUser}
 								style={{
+									opacity: !photoURL ? 0.75 : 1,
 									width: 40,
 									height: 40,
 									borderRadius: 20,

@@ -17,6 +17,8 @@ import "@react-native-firebase/messaging";
 import { useDispatch } from "react-redux";
 import { RESET_ACTION } from "../store/reducers";
 import UserPermissions from "../permissions/UserPermissions";
+import { NEW_DRIVER } from "../store/actionTypes";
+import { getDriverDetails } from "../config/Fire";
 
 const RootStack = createStackNavigator();
 const MainStack = createStackNavigator();
@@ -65,6 +67,8 @@ const AppNavigator = props => {
 					.auth()
 					.signInWithEmailAndPassword(email.toLowerCase().trim(), password)
 					.then(({ user }) => {
+						getDriverDetails(user.uid)
+							.then((details) => dispatch({type: NEW_DRIVER, data: {...details}}))
 						setInitializing(false);
 						setUserToken(user.uid);
 					})
@@ -137,15 +141,16 @@ const AppNavigator = props => {
 	useEffect(() => console.log("Loading: ", initializing),[initializing])
 
 	async function onAuthStateChanged(user) {
-		setUserToken(user ? user.uid : user);
-		setInitializing(false);
 		if (user) {
-			console.log("onAuthStateChanged", user ? user.uid : user);
-			console.log("signed in");
+			console.log("signed in", user.uid);
 			//get location permissions
 			await UserPermissions.getLocationPermission();
 			//get device/fcm push notification token
 			await UserPermissions.registerPushNotificationsAsync(user);
+			setUserToken(user ? user.uid : user);
+			setInitializing(false);
+		} else {
+			setInitializing(false);
 		}
 		/* else {
 			try {

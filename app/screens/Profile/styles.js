@@ -13,7 +13,7 @@ export default styles = StyleSheet.create({
 	},
 	wrapper: {
 		backgroundColor: COLOURS.WHITE,
-		flex: 0.5,
+		flex: 1,
 		width: "100%",
 		alignItems: "center",
 		elevation: 5,
@@ -37,7 +37,13 @@ export default styles = StyleSheet.create({
 		justifyContent: "center",
 		borderRadius: AVATAR_SIZE + 10 / 2,
 	},
-	cardAvatar: {
+	addAvatar: {
+		opacity: 0.6,
+		width: AVATAR_SIZE,
+		height: AVATAR_SIZE,
+		borderRadius: AVATAR_SIZE / 2
+	},
+	avatar: {
 		width: AVATAR_SIZE,
 		height: AVATAR_SIZE,
 		borderRadius: AVATAR_SIZE / 2,

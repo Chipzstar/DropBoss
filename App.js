@@ -4,6 +4,7 @@ import * as Font from "expo-font";
 import AppNavigator from "./app/navigation/AppNavigator";
 import { NavigationContainer } from "@react-navigation/native";
 import { FONTS } from "./app/constants/Theme";
+import { Provider as PaperProvider } from 'react-native-paper';
 //redux storage
 import { Provider } from "react-redux";
 import { persistor, store } from "./app/store/store";

@@ -107,20 +107,14 @@ const NewRide = React.memo(
 			try {
 				await axios.post(
 					url,
-					{ data: { message, riderId: pickUp.riderInfo.id, driverId: user.uid} },
+					{ data: { message, riderId: pickUp.riderInfo.id, driverId: user.uid } },
 					{
 						headers: {
-							"Content-Type": "application/json; charset=utf-8"
+							"Content-Type": "application/json; charset=utf-8",
 						},
 					}
 				);
-				ToastAndroid.showWithGravityAndOffset(
-					"Message Sent",
-					ToastAndroid.LONG,
-					ToastAndroid.BOTTOM,
-					0,
-					100
-				);
+				ToastAndroid.showWithGravityAndOffset("Message Sent", ToastAndroid.LONG, ToastAndroid.BOTTOM, 0, 100);
 			} catch (e) {
 				console.log({ Error: e });
 			}
@@ -209,7 +203,7 @@ NewRide.propTypes = {
 	tripId: PropTypes.string.isRequired,
 	onCancel: PropTypes.func.isRequired,
 	markers: PropTypes.array.isRequired,
-	updateMarkers: PropTypes.func.isRequired,
+	updateMarkers: PropTypes.func.isRequired
 };
 
 export default NewRide;

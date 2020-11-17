@@ -37,6 +37,10 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+    <string>Dash Boss app requires photo library access</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Dash Boss app requires camera access to take photos</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>UILaunchStoryboardName</key>
