@@ -4,7 +4,7 @@ import * as Font from "expo-font";
 import AppNavigator from "./app/navigation/AppNavigator";
 import { NavigationContainer } from "@react-navigation/native";
 import { FONTS } from "./app/constants/Theme";
-import { Provider as PaperProvider } from 'react-native-paper';
+import SplashScreen from 'react-native-splash-screen';
 //redux storage
 import { Provider } from "react-redux";
 import { persistor, store } from "./app/store/store";
@@ -21,7 +21,10 @@ class App extends React.Component {
 	}
 
 	async componentDidMount() {
-		this.prepareResources().then(() => console.log("All resources have been loaded!"));
+		this.prepareResources().then(() => {
+			console.log("All resources have been loaded!")
+			SplashScreen.hide();
+		});
 	}
 
 	prepareResources = async () => {

@@ -46,7 +46,7 @@ const ForgotPassword = ({ navigation }) => {
 								placeholder={"Email"}
 								onSubmitEditing={props.handleSubmit}
 								bgColor='transparent'
-								style={styles.input}
+								style={[styles.input, styles.inputLine]}
 							/>
 							<Text style={styles.error} muted>
 								{props.touched.email && props.errors.email}

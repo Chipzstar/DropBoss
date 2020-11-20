@@ -1,40 +1,49 @@
 import React from "react";
-import { ToastAndroid, Alert } from "react-native";
+import { Alert } from "react-native";
 import Constants from "expo-constants";
-import * as Permissions from "expo-permissions";
+import { Permissions } from "react-native-unimodules";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { updateUserFcmToken } from "../config/Fire";
+import * as IntentLauncher from "expo-intent-launcher";
+
+const goToSettings = () => {
+	// IntentLauncher for Android
+	IntentLauncher.startActivityAsync(IntentLauncher.ACTION_APPLICATION_DETAILS_SETTINGS, {
+		packageName: "package:com.dropboss",
+	}).then(res => console.log(res));
+};
 
 class UserPermissions {
 	getLocationPermission = async () => {
-		const { status } = await Location.requestPermissionsAsync();
+		let { status } = await Location.requestPermissionsAsync();
 		if (Constants.platform.ios) {
 			status !== "granted"
-				? Alert.alert(
-				"We need permission to access your device's location"
-				)
+				? Alert.alert("We need permission to access your device's location")
 				: console.log("Permission for LOCATION granted!");
 		} else {
 			status !== "granted"
-				? ToastAndroid.show(
-				"We need permission to access your device's location!",
-				ToastAndroid.SHORT
-				)
+				? Alert.alert("Permission denied", "We need permission to access your device's location!", [
+						{
+							text: "Go To Settings",
+							onPress: goToSettings,
+							style: "cancel",
+						},
+						{
+							text: "Cancel",
+							style: "cancel",
+						},
+				  ])
 				: console.log("Permission for LOCATION granted!");
 		}
 	};
-	registerPushNotificationsAsync = async (user) => {
+	registerPushNotificationsAsync = async user => {
 		let token;
 		if (Constants.isDevice) {
-			const { status: existingStatus } = await Permissions.getAsync(
-				Permissions.NOTIFICATIONS
-			);
+			const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
 			let finalStatus = existingStatus;
 			if (existingStatus !== "granted") {
-				const { status } = await Permissions.askAsync(
-					Permissions.NOTIFICATIONS
-				);
+				const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
 				finalStatus = status;
 			}
 			if (finalStatus !== "granted") {
@@ -43,7 +52,7 @@ class UserPermissions {
 			}
 			token = (await Notifications.getDevicePushTokenAsync()).data;
 			await updateUserFcmToken(user, token);
-			console.log("Token:", token)
+			console.log("Token:", token);
 			return token;
 		} else {
 			alert("Must use physical device for Push Notifications");

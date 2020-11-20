@@ -62,7 +62,6 @@ const AppNavigator = props => {
 	const authContext = useMemo(
 		() => ({
 			signIn: ({ email, password }) => {
-				unsubscribeAuth();
 				firebase
 					.auth()
 					.signInWithEmailAndPassword(email.toLowerCase().trim(), password)
@@ -70,7 +69,6 @@ const AppNavigator = props => {
 						getDriverDetails(user.uid)
 							.then((details) => dispatch({type: NEW_DRIVER, data: {...details}}))
 						setInitializing(false);
-						setUserToken(user.uid);
 					})
 					.catch(error => {
 						switch (error.code) {
@@ -141,6 +139,7 @@ const AppNavigator = props => {
 	useEffect(() => console.log("Loading: ", initializing),[initializing])
 
 	async function onAuthStateChanged(user) {
+		console.log("ONSTATECHANGE!", !!user)
 		if (user) {
 			console.log("signed in", user.uid);
 			//get location permissions

@@ -72,7 +72,7 @@ const Profile = ({ navigation }) => {
 		}
 	};
 
-	return (
+	return (	
 		<PaperProvider>
 			<View style={styles.container}>
 				<Loader isVisible={loading}/>
