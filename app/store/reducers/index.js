@@ -6,7 +6,7 @@ import pickUpReducer from "./pickUp";
 import dropOffReducer from "./dropOff";
 import invoiceReducer from "./invoice";
 //actionTypes
-import { CLEAR, NEW_DRIVER, ONLINE, RESET, RIDE_STATUS } from "../actionTypes";
+import { CLEAR, NEW_DRIVER, ONLINE, RESET, RIDE_STATUS, UPDATE_DRIVER } from "../actionTypes";
 
 export const RESET_ACTION = {
 	type: RESET,
@@ -26,6 +26,8 @@ const appReducer = combineReducers({
 		switch (action.type) {
 			case NEW_DRIVER:
 				return action.data
+			case UPDATE_DRIVER:
+				return { ...state, ...action.data }
 			default:
 				return state;
 		}

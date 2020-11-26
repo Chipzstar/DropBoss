@@ -25,7 +25,7 @@ class UserPermissions {
 			status !== "granted"
 				? Alert.alert("Permission denied", "We need permission to access your device's location!", [
 						{
-							text: "Go To Settings",
+							text: "Go To EditProfile",
 							onPress: goToSettings,
 							style: "cancel",
 						},

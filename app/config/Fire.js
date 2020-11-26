@@ -36,7 +36,7 @@ export const getDriverDetails = (id) => {
 	return new Promise(async (resolve, reject) => {
 		try {
 			if(id){
-				let {firstname, surname, tel } = (await firebase.database().ref(`drivers/${id}`).once("value")).val()
+				let { firstname, surname, tel } = (await firebase.database().ref(`drivers/${id}`).once("value")).val()
 				console.log(firstname, surname, tel);
 				resolve({firstname, surname, tel})
 			}
@@ -161,4 +161,21 @@ export const uploadPhotoAsync = async (uri, filepath) => {
 		);
 	});
 };
+
+export const updateUserProfile = async (driverId, changes) => {
+	return new Promise(async (resolve, reject) => {
+		try {
+			if (driverId) {
+				await firebase
+					.database()
+					.ref(`drivers/${driverId}`)
+					.update({
+						...changes
+					});
+			}
+		} catch (err) {
+			reject(err)
+		}
+	})
+}
 

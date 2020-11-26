@@ -61,7 +61,7 @@ target 'DropBoss' do
   pod 'React-RCTImage', :path => '../node_modules/react-native/Libraries/Image'
   pod 'React-RCTLinking', :path => '../node_modules/react-native/Libraries/LinkingIOS'
   pod 'React-RCTNetwork', :path => '../node_modules/react-native/Libraries/Network'
-  pod 'React-RCTSettings', :path => '../node_modules/react-native/Libraries/Settings'
+  pod 'React-RCTSettings', :path => '../node_modules/react-native/Libraries/EditProfile'
   pod 'React-RCTText', :path => '../node_modules/react-native/Libraries/Text'
   pod 'React-RCTVibration', :path => '../node_modules/react-native/Libraries/Vibration'
   pod 'React-Core/RCTWebSocket', :path => '../node_modules/react-native/'
@@ -88,6 +88,8 @@ target 'DropBoss' do
   add_flipper_pods!
 
   pod 'react-native-splash-screen', :path => '../node_modules/react-native-splash-screen'
+
+  pod 'tipsi-stripe', :path => '../node_modules/tipsi-stripe'
 
   post_install do |installer|
     flipper_post_install(installer)

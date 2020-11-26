@@ -5,6 +5,7 @@
 //RESET REDUX
 export const RESET = 'RESET';
 export const NEW_DRIVER = 'NEW_DRIVER';
+export const UPDATE_DRIVER = 'UPDATE_DRIVER';
 //pickup actions
 export const CREATE_PICKUP = "CREATE_PICKUP";
 export const UPDATE_PICKUP = "UPDATE_PICKUP";

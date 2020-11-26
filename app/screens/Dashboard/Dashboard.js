@@ -8,14 +8,13 @@ import MapViewDirections from "react-native-maps-directions";
 import { Block, Text } from "galio-framework";
 import * as Location from "expo-location";
 import moment from "moment";
-import defaultUser from '../../assets/images/user.png';
+import defaultUser from "../../assets/images/user.png";
 //firebase
 import firebase from "@react-native-firebase/app";
 import "@react-native-firebase/database";
 import "@react-native-firebase/messaging";
 import { connect, markRideAccepted, updateUserCoordinates } from "../../config/Fire";
 //assets
-import oscar from "../../assets/images/oscar.jpg";
 //components
 import NewRequest from "../../components/Ride/NewRequest";
 import NewRide from "../../components/Ride/NewRide";
@@ -32,6 +31,7 @@ import { REMOVE_DROPOFF, REMOVE_PICKUP, RIDE_STATUS } from "../../store/actionTy
 import DropoffModal from "../../components/Modals/DropoffModal";
 import { updateInvoice } from "../../store/actions/invoice";
 import InvoiceModal from "../../components/Modals/InvoiceModal";
+//stripe
 
 const Dashboard = props => {
 	//redux
@@ -443,7 +443,7 @@ const Dashboard = props => {
 							/>
 						</Block>
 						<Block style={styles.incomeStatus}>
-							<Text style={styles.incomeText}>{"£107.19"}</Text>
+							<Text style={styles.incomeText}>{"£0.00"}</Text>
 						</Block>
 						<TouchableOpacity
 							activeOpacity={0.7}

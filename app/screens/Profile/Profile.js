@@ -1,10 +1,8 @@
 import React, { useContext, useState } from "react";
-import { FlatList, Image, TouchableOpacity, View, Alert } from "react-native";
+import { FlatList, Image, TouchableOpacity, View } from "react-native";
 import { Block, Button, Text } from "galio-framework";
 import { useSelector } from "react-redux";
-import { Menu, Provider as PaperProvider } from "react-native-paper";
-import * as Permissions from "expo-permissions";
-import ImagePicker from "react-native-image-picker";
+import { Provider as PaperProvider } from "react-native-paper";
 //components
 import Card from "../../components/Card";
 import MenuItem from "../../components/MenuItem";
@@ -12,13 +10,11 @@ import DashIcons from "../../components/DashIcons";
 //styles
 import styles from "./styles";
 import { COLOURS } from "../../constants/Theme";
-import { HEIGHT, WIDTH } from "../Dashboard/styles";
+import { HEIGHT } from "../Dashboard/styles";
 import AuthContext from "../../context/AuthContext";
 //images
 import defaultUser from "../../assets/images/user.png";
 //functions
-import { uploadPhotoAsync } from "../../config/Fire";
-import Loader from "../../components/Modals/Loader";
 
 const NAV_OPTIONS = [
 	{
@@ -42,42 +38,13 @@ const NAV_OPTIONS = [
 const Profile = ({ navigation }) => {
 	const { signOut, user } = useContext(AuthContext);
 	const { driver } = useSelector(state => state);
-	const [showMenu, setShowMenu] = useState(false);
-	const [avatarRef, setAvatarRef] = useState({ x: 0, y: 0 });
 	const [imageUri, setImageUri] = useState(user ? user.photoURL : null);
-	const [hasChanged, setHasChanged] = useState(false);
-	const [loading, setLoading] = useState(false);
 
-	const pickImage = async () => {
-		let { status } = await Permissions.askAsync("cameraRoll", "camera");
-		console.log(status);
-		if (status !== "granted") {
-			Alert.alert("Sorry, we need camera roll permissions to make this work!");
-		} else {
-			ImagePicker.launchImageLibrary(
-				{
-					mediaType: "photo",
-					quality: 1,
-					allowsEditing: true,
-				},
-				response => {
-					if (response.didCancel) {
-						Alert.alert("Image selection cancelled!")
-					} else {
-						setHasChanged(true);
-						setImageUri(response.uri);
-					}
-				}
-			);
-		}
-	};
-
-	return (	
+	return (
 		<PaperProvider>
 			<View style={styles.container}>
-				<Loader isVisible={loading}/>
 				<Block style={styles.wrapper}>
-					<TouchableOpacity
+					{/*<TouchableOpacity
 						style={styles.backBtn}
 						activeOpacity={0.7}
 						onPress={() => {
@@ -104,12 +71,18 @@ const Profile = ({ navigation }) => {
 						}}
 					>
 						<DashIcons name={"back"} size={25} color={COLOURS.TEXT} />
+					</TouchableOpacity>*/}
+					<TouchableOpacity
+						style={styles.editBtn}
+						activeOpacity={0.7}
+						onPress={() => navigation.navigate("EditProfile")}
+					>
+						<DashIcons name={"edit"} size={25} color={COLOURS.TEXT} />
 					</TouchableOpacity>
 					<Card>
 						<TouchableOpacity
 							activeOpacity={0.7}
 							style={styles.avatarContainer}
-							onLongPress={() => setShowMenu(true)}
 						>
 							{imageUri ? (
 								<Image source={{ uri: imageUri }} style={styles.avatar} />
@@ -117,15 +90,7 @@ const Profile = ({ navigation }) => {
 								<Image source={defaultUser} style={styles.addAvatar} />
 							)}
 						</TouchableOpacity>
-						<Menu visible={showMenu} onDismiss={() => setShowMenu(false)} anchor={avatarRef}>
-							<Menu.Item title={"Change Profile Photo"} onPress={() => pickImage()} />
-						</Menu>
-						<Block
-							onLayout={event => {
-								const { x, y, height, width } = event.nativeEvent.layout;
-								setAvatarRef({ x: x + width, y: y - height });
-							}}
-						>
+						<Block>
 							<Text size={18} style={styles.text}>
 								{driver.firstname}&nbsp;{driver.surname}
 							</Text>

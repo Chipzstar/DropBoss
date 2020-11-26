@@ -7,6 +7,7 @@ import ForgotPassword from "../screens/Auth/ForgotPassword";
 import Verification from "../screens/Auth/Verification";
 import Dashboard from "../screens/Dashboard/Dashboard";
 import Profile from "../screens/Profile/Profile";
+import EditProfile from "../screens/EditProfile/EditProfile";
 import Settings from "../screens/Settings/Settings";
 //context
 import { AuthProvider } from "../context/AuthContext";
@@ -48,6 +49,7 @@ const MainStackScreen = () => (
 	<MainStack.Navigator headerMode={"none"}>
 		<MainStack.Screen name='Home'>{props => <Dashboard {...props} />}</MainStack.Screen>
 		<MainStack.Screen name='Profile' component={Profile} />
+		<MainStack.Screen name='EditProfile' component={EditProfile} />
 		<MainStack.Screen name='Settings' component={Settings} />
 	</MainStack.Navigator>
 );
@@ -67,7 +69,7 @@ const AppNavigator = props => {
 					.signInWithEmailAndPassword(email.toLowerCase().trim(), password)
 					.then(({ user }) => {
 						getDriverDetails(user.uid)
-							.then((details) => dispatch({type: NEW_DRIVER, data: {...details}}))
+							.then((details) => dispatch({type: NEW_DRIVER, data: {...details, email: user.email, photoURL: user.photoURL}}))
 						setInitializing(false);
 					})
 					.catch(error => {
@@ -151,19 +153,6 @@ const AppNavigator = props => {
 		} else {
 			setInitializing(false);
 		}
-		/* else {
-			try {
-				await firebase
-					.auth()
-					.signInWithEmailAndPassword(
-						"chipzstar.dev@googlemail.com",
-						"Chisom11#"
-					)
-				console.log("new user signed in!");
-			} catch (error) {
-				console.error(error.code, error.message);
-			}
-		}*/
 	}
 
 	return (

@@ -67,6 +67,21 @@ export default styles = StyleSheet.create({
 		paddingRight: 2,
 		height: 42,
 		width: 42,
+		borderRadius: 21
+	},
+	editBtn: {
+		backgroundColor: COLOURS.WHITE,
+		elevation: 4,
+		position: "absolute",
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		alignSelf: "flex-start",
+		top: 30,
+		right: 20,
+		paddingRight: 2,
+		height: 42,
+		width: 42,
 		borderRadius: 21,
 	},
 });

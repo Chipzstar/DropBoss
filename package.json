@@ -44,7 +44,6 @@
     "react-native-gesture-handler": "~1.6.1",
     "react-native-image-picker": "^2.3.4",
     "react-native-input-style": "^1.0.2",
-    "react-native-intent-launcher": "^0.2.1",
     "react-native-maps": "0.27.1",
     "react-native-maps-directions": "^1.8.0",
     "react-native-modal": "^11.5.6",
@@ -60,6 +59,7 @@
     "redux": "^4.0.5",
     "redux-persist": "^6.0.0",
     "redux-thunk": "^2.3.0",
+    "tipsi-stripe": "^7.5.3",
     "yup": "^0.29.3"
   },
   "prettier": {
